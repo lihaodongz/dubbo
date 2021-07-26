@@ -36,6 +36,9 @@ import java.lang.reflect.Method;
  */
 public class InvokerInvocationHandler implements InvocationHandler {
     private static final Logger logger = LoggerFactory.getLogger(InvokerInvocationHandler.class);
+    /**
+     *  这里的invoker是 MockClusterInvoker
+     */
     private final Invoker<?> invoker;
     private ConsumerModel consumerModel;
     private URL url;

@@ -1,0 +1,5 @@
+@startuml
+InvokerInvocationHandler  -> MockClusterInvoker
+MockClusterInvoker -> XXXXXClusterInvoker
+XXXXXClusterInvoker{FailOverlusterInvoker} -> DubboInvoker
+@enduml
