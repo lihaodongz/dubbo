@@ -147,8 +147,10 @@ public class ExtensionLoader<T> {
         return asList(strategies);
     }
 
+    // 每一次New一个ExtensionLoader
     private ExtensionLoader(Class<?> type) {
         this.type = type;
+        // 加载对象的工厂类
         objectFactory =
                 (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
@@ -694,6 +696,8 @@ public class ExtensionLoader<T> {
         return getExtensionClasses().containsKey(name);
     }
 
+
+    // dubbo spi 机制的Ioc 处理依赖问题
     private T injectExtension(T instance) {
 
         if (objectFactory == null) {
@@ -702,6 +706,7 @@ public class ExtensionLoader<T> {
 
         try {
             for (Method method : instance.getClass().getMethods()) {
+                // !setter
                 if (!isSetter(method)) {
                     continue;
                 }
@@ -1058,6 +1063,14 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 获取某一个接口的全部实现类
+     * 比如该方法可以获取 Protocol 接口的 DubboProtocol、HttpProtocol、InjvmProtocol 等实现类。
+     * 在获取实现类的过程中，如果某个实现类被 Adaptive 注解修饰了，那么该类就会被赋值给 cachedAdaptiveClass 变量。
+     * 此时，上面步骤中的第二步条件成立（缓存不为空），直接返回 cachedAdaptiveClass 即可。如果所有的实现类均未被 Adaptive 注解修饰，那么执行第三步逻辑，创建自适应拓展类
+     * @return
+     *
+     */
     private Class<?> getAdaptiveExtensionClass() {
         getExtensionClasses();
         if (cachedAdaptiveClass != null) {

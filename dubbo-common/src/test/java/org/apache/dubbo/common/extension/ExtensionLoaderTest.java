@@ -58,6 +58,7 @@ import org.apache.dubbo.common.extension.ext8_add.impl.AddExt4_ManualAdaptive;
 import org.apache.dubbo.common.extension.ext9_empty.Ext9Empty;
 import org.apache.dubbo.common.extension.ext9_empty.impl.Ext9EmptyImpl;
 import org.apache.dubbo.common.extension.injection.InjectExt;
+import org.apache.dubbo.common.extension.injection.Robot;
 import org.apache.dubbo.common.extension.injection.impl.InjectExtImpl;
 import org.apache.dubbo.common.lang.Prioritized;
 import org.junit.jupiter.api.Assertions;
@@ -82,7 +83,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+/**
+ * spi 扩展加载测试类
+ */
 public class ExtensionLoaderTest {
+
     @Test
     public void test_getExtensionLoader_Null() throws Exception {
         try {
@@ -118,10 +123,22 @@ public class ExtensionLoaderTest {
         }
     }
 
+
+    /**
+     * 扩展加载
+     *
+     * @throws Exception
+     */
     @Test
     public void test_getDefaultExtension() throws Exception {
+
+
+        ExtensionLoader<SimpleExt> extensionLoader = getExtensionLoader(SimpleExt.class);
+        SimpleExt defaultExtension = extensionLoader.getDefaultExtension();
+
+       /* // 直接获取ExtensionLoader.getDefaultExtension
         SimpleExt ext = getExtensionLoader(SimpleExt.class).getDefaultExtension();
-        assertThat(ext, instanceOf(SimpleExtImpl1.class));
+        assertThat(ext, instanceOf(SimpleExtImpl1.class));*/
 
         String name = getExtensionLoader(SimpleExt.class).getDefaultExtensionName();
         assertEquals("impl1", name);
@@ -652,5 +669,13 @@ public class ExtensionLoaderTest {
         public int getPriority() {
             return MAX_PRIORITY;
         }
+    }
+
+
+    @Test
+    public void testRobot(){
+        ExtensionLoader<Robot> extensionLoader = ExtensionLoader.getExtensionLoader(Robot.class);
+        Robot robotImpl = extensionLoader.getExtension("robotImpl");
+        robotImpl.sayHello();
     }
 }
