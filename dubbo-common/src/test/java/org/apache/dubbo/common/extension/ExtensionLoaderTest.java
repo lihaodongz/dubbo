@@ -678,4 +678,15 @@ public class ExtensionLoaderTest {
         Robot robotImpl = extensionLoader.getExtension("robotImpl");
         robotImpl.sayHello();
     }
+
+    @Test
+    public void testSpi(){
+        ExtensionLoader<SimpleExt> extensionLoader = getExtensionLoader(SimpleExt.class);
+
+        SimpleExt defaultExtension = extensionLoader.getDefaultExtension();
+
+        SimpleExt impl2 = extensionLoader.getExtension("impl2");
+
+        System.out.println(impl2);
+    }
 }

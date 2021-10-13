@@ -1,0 +1,1 @@
+robotImpl=org.apache.dubbo.common.extension.injection.impl.RobotImpl

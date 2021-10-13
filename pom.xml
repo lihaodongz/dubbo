@@ -152,6 +152,8 @@
         <module>dubbo-metadata</module>
         <module>dubbo-build-tools</module>
         <module>dubbo-spring-boot</module>
+        <module>dubbo-uml</module>
+        <module>dubbo-uml</module>
     </modules>
 
     <dependencyManagement>
