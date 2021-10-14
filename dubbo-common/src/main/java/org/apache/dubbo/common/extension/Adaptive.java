@@ -26,7 +26,10 @@ import java.lang.annotation.Target;
 
 /**
  * Provide helpful information for {@link ExtensionLoader} to inject dependency extension instance.
- *
+ * 添加这个注解的方法会被代理生成新的实现类
+ * 自适应扩展点注解,因为Dubbo是基于URL驱动，所以在运行时，通过传入URL中的某些参数来动态控制具体实现，这便是Dubbo的扩展点自适应特性。
+ * 标注在方法上面的时候会动态代理生成对应的激活类,根据url获取对应的实现类.动态代理.
+ * 这样在Dubbo加载扩展点时便可以根据adaptive属性找到AdaptiveComiler实现类，再通过compiler方法决定是调用默认实现，还是指定的实现，默认实现由扩展点接口上的@SPI注解指定。
  * @see ExtensionLoader
  * @see URL
  */

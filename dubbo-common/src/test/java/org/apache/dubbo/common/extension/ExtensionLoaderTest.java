@@ -64,10 +64,7 @@ import org.apache.dubbo.common.lang.Prioritized;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
 import static org.apache.dubbo.common.extension.ExtensionLoader.getExtensionLoader;
@@ -181,8 +178,10 @@ public class ExtensionLoaderTest {
     public void test_getActivateExtension_WithWrapper() throws Exception {
         URL url = URL.valueOf("test://localhost/test");
         List<ActivateWrapperExt1> list = getExtensionLoader(ActivateWrapperExt1.class)
+                // 获取指定条件的扩展点
                 .getActivateExtension(url, new String[]{}, "order");
         assertEquals(2, list.size());
+        ExtensionLoader<ActivateWrapperExt1> extensionLoader = getExtensionLoader(ActivateWrapperExt1.class);
     }
 
     @Test
@@ -421,11 +420,11 @@ public class ExtensionLoaderTest {
     public void testLoadActivateExtensionWithNoRepeat() {
         URL url = URL.valueOf("test://localhost/test");
         List<ActivateExt1> list = getExtensionLoader(ActivateExt1.class)
-                .getActivateExtension(url, new String[] {"old1", "old2"}, "default_group");
+                .getActivateExtension(url, new String[]{"old1", "old2"}, "default_group");
         Assertions.assertEquals(3, list.size());
 
         list = getExtensionLoader(ActivateExt1.class)
-                .getActivateExtension(url, new String[] {"old1", "old2", "old1"}, "default_group");
+                .getActivateExtension(url, new String[]{"old1", "old2", "old1"}, "default_group");
         Assertions.assertEquals(3, list.size());
     }
 
@@ -477,6 +476,7 @@ public class ExtensionLoaderTest {
         // test default
         URL url = URL.valueOf("test://localhost/test?ext=order1,default");
         List<ActivateExt1> list = getExtensionLoader(ActivateExt1.class)
+                // url,order1,default,default_group
                 .getActivateExtension(url, "ext", "default_group");
         assertEquals(2, list.size());
         Assertions.assertSame(list.get(0).getClass(), OrderActivateExtImpl1.class);
@@ -597,7 +597,7 @@ public class ExtensionLoaderTest {
         } catch (IllegalStateException expected) {
             assertThat(expected.getMessage(), containsString("Failed to load extension class (interface: interface org.apache.dubbo.common.extension.duplicated.DuplicatedWithoutOverriddenExt"));
             assertThat(expected.getMessage(), containsString("cause: Duplicate extension org.apache.dubbo.common.extension.duplicated.DuplicatedWithoutOverriddenExt name duplicated"));
-        }finally {
+        } finally {
             //recover the loading strategies
             ExtensionLoader.setLoadingStrategies(loadingStrategies.toArray(new LoadingStrategy[loadingStrategies.size()]));
         }
@@ -673,20 +673,40 @@ public class ExtensionLoaderTest {
 
 
     @Test
-    public void testRobot(){
+    public void testRobot() {
         ExtensionLoader<Robot> extensionLoader = ExtensionLoader.getExtensionLoader(Robot.class);
         Robot robotImpl = extensionLoader.getExtension("robotImpl");
         robotImpl.sayHello();
     }
 
     @Test
-    public void testSpi(){
+    public void testSpi() {
+
         ExtensionLoader<SimpleExt> extensionLoader = getExtensionLoader(SimpleExt.class);
 
+        // impl1
         SimpleExt defaultExtension = extensionLoader.getDefaultExtension();
-
+        // impl2
         SimpleExt impl2 = extensionLoader.getExtension("impl2");
+        //
+        SimpleExt adaptiveExtension = extensionLoader.getAdaptiveExtension();
 
-        System.out.println(impl2);
+
+        System.out.println(adaptiveExtension.getClass());
+    }
+
+    @Test
+    public void testExtensionFactory() {
+        ExtensionLoader<ExtensionFactory> extensionLoader = getExtensionLoader(ExtensionFactory.class);
+        ExtensionFactory adaptiveExtension = extensionLoader.getAdaptiveExtension(); // 生成配置的类 spi=xxxx
+        System.out.println();
+    }
+
+    @Test
+    public void testActivateExtensionLoader(){
+        ExtensionLoader<ActivateExt1> extensionLoader = getExtensionLoader(ActivateExt1.class);
+        URL url = URL.valueOf("test://lcoalhost?ext=order,order1");
+        List<ActivateExt1> activateExtension = extensionLoader.getActivateExtension(url,"ext","default_group");
+        System.out.println(activateExtension.size());
     }
 }

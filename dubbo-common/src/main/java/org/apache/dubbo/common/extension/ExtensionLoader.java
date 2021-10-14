@@ -250,7 +250,7 @@ public class ExtensionLoader<T> {
 
     /**
      * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
-     *
+     * 获取制定的扩展点
      * @param url   url
      * @param key   url parameter key which used to get extension point names
      * @param group group
@@ -276,8 +276,10 @@ public class ExtensionLoader<T> {
         // solve the bug of using @SPI's wrapper method to report a null pointer exception.
         TreeMap<Class, T> activateExtensionsMap = new TreeMap<>(ActivateComparator.COMPARATOR);
         Set<String> loadedNames = new HashSet<>();
-        Set<String> names = CollectionUtils.ofSet(values);
+        Set<String> names = CollectionUtils.ofSet(values);// value 去重复
+        // value 和 默认值比较 若命中默认的group则加载
         if (!names.contains(REMOVE_VALUE_PREFIX + DEFAULT_KEY)) {
+            // 不包含
             getExtensionClasses();
             for (Map.Entry<String, Object> entry : cachedActivates.entrySet()) {
                 String name = entry.getKey();
@@ -294,6 +296,7 @@ public class ExtensionLoader<T> {
                 } else {
                     continue;
                 }
+                // 加载默认的配置扩展点
                 if (isMatchGroup(group, activateGroup)
                         && !names.contains(name)
                         && !names.contains(REMOVE_VALUE_PREFIX + name)
@@ -307,6 +310,7 @@ public class ExtensionLoader<T> {
                 activateExtensions.addAll(activateExtensionsMap.values());
             }
         }
+        // 解析values 加载对应的扩展
         List<T> loadedExtensions = new ArrayList<>();
         for (String name : names) {
             if (!name.startsWith(REMOVE_VALUE_PREFIX)
@@ -332,6 +336,7 @@ public class ExtensionLoader<T> {
         if (!loadedExtensions.isEmpty()) {
             activateExtensions.addAll(loadedExtensions);
         }
+        System.out.println(activateExtensions);
         return activateExtensions;
     }
 
@@ -424,12 +429,19 @@ public class ExtensionLoader<T> {
     /**
      * Find the extension with the given name. If the specified name is not found, then {@link IllegalStateException}
      * will be thrown.
+     * 获取扩展点对象
      */
     @SuppressWarnings("unchecked")
     public T getExtension(String name) {
         return getExtension(name, true);
     }
 
+    /**
+     * 这个方法是根据配置的名字获取指定的 这个对象被封装在Holder中
+     * @param name
+     * @param wrap
+     * @return
+     */
     public T getExtension(String name, boolean wrap) {
         if (StringUtils.isEmpty(name)) {
             throw new IllegalArgumentException("Extension name == null");
@@ -608,7 +620,6 @@ public class ExtensionLoader<T> {
                         createAdaptiveInstanceError.toString(),
                         createAdaptiveInstanceError);
             }
-
             synchronized (cachedAdaptiveInstance) {
                 instance = cachedAdaptiveInstance.get();
                 if (instance == null) {
@@ -666,14 +677,13 @@ public class ExtensionLoader<T> {
 
 
             if (wrap) {
-
                 List<Class<?>> wrapperClassesList = new ArrayList<>();
                 if (cachedWrapperClasses != null) {
                     wrapperClassesList.addAll(cachedWrapperClasses);
                     wrapperClassesList.sort(WrapperComparator.COMPARATOR);
                     Collections.reverse(wrapperClassesList);
                 }
-
+                // 类包裹  ====
                 if (CollectionUtils.isNotEmpty(wrapperClassesList)) {
                     for (Class<?> wrapperClass : wrapperClassesList) {
                         Wrapper wrapper = wrapperClass.getAnnotation(Wrapper.class);
@@ -698,7 +708,7 @@ public class ExtensionLoader<T> {
     }
 
 
-    // dubbo spi 机制的Ioc 处理依赖问题
+    // dubbo spi 机制的Ioc 处理依赖问题 解析这个bean 之前的bean都是利用默认的构造方法给出的bean.
     private T injectExtension(T instance) {
 
         if (objectFactory == null) {
@@ -712,7 +722,7 @@ public class ExtensionLoader<T> {
                     continue;
                 }
                 /**
-                 * Check {@link DisableInject} to see if we need auto injection for this property
+                 * Check {@link DisableInject} to see if we need auto injection for this property set方法才会走到下面的逻辑,进行属性的注入
                  */
                 if (method.getAnnotation(DisableInject.class) != null) {
                     continue;
@@ -770,7 +780,7 @@ public class ExtensionLoader<T> {
                 && method.getParameterTypes().length == 1
                 && Modifier.isPublic(method.getModifiers());
     }
-
+    // 获取扩展点的类对象
     private Class<?> getExtensionClass(String name) {
         if (type == null) {
             throw new IllegalArgumentException("Extension type == null");
@@ -781,6 +791,7 @@ public class ExtensionLoader<T> {
         return getExtensionClasses().get(name);
     }
 
+    // 返回当前配置的配置文件.
     private Map<String, Class<?>> getExtensionClasses() {
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
@@ -799,6 +810,7 @@ public class ExtensionLoader<T> {
      * synchronized in getExtensionClasses
      */
     private Map<String, Class<?>> loadExtensionClasses() {
+        // 缓存默认的spi扩展, 如果有默认只的话,此时cachedDefaultName=xxxx 但是并未看到加载该类
         cacheDefaultExtensionName();
 
         Map<String, Class<?>> extensionClasses = new HashMap<>();
@@ -809,12 +821,12 @@ public class ExtensionLoader<T> {
             loadDirectory(extensionClasses, strategy.directory(), type.getName().replace("org.apache", "com.alibaba"),
                     strategy.preferExtensionClassLoader(), strategy.overridden(), strategy.excludedPackages());
         }
-
+        // 直接在配置文件中配置的类 spi=org.apache.dubbo.common.extension.factory.SpiExtensionFactory
         return extensionClasses;
     }
 
     /**
-     * extract and cache default extension name if exists
+     * extract and cache default extension name if exists 缓存spi的方法
      */
     private void cacheDefaultExtensionName() {
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
@@ -874,6 +886,14 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 加载指定的类
+     * @param extensionClasses
+     * @param classLoader
+     * @param resourceURL
+     * @param overridden
+     * @param excludedPackages
+     */
     private void loadResource(Map<String, Class<?>> extensionClasses, ClassLoader classLoader,
                               java.net.URL resourceURL, boolean overridden, String... excludedPackages) {
         try {
@@ -1073,6 +1093,7 @@ public class ExtensionLoader<T> {
      *
      */
     private Class<?> getAdaptiveExtensionClass() {
+        // 获取spi扩展类
         getExtensionClasses();
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
@@ -1080,6 +1101,10 @@ public class ExtensionLoader<T> {
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 
+    /**
+     * 生成动态代理类
+     * @return
+     */
     private Class<?> createAdaptiveExtensionClass() {
         String code = new AdaptiveClassCodeGenerator(type, cachedDefaultName).generate();
         ClassLoader classLoader = findClassLoader();

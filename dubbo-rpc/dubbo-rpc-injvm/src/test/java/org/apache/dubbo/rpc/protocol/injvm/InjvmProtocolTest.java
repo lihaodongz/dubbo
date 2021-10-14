@@ -19,10 +19,7 @@ package org.apache.dubbo.rpc.protocol.injvm;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.ExtensionLoader;
-import org.apache.dubbo.rpc.Exporter;
-import org.apache.dubbo.rpc.Invoker;
-import org.apache.dubbo.rpc.Protocol;
-import org.apache.dubbo.rpc.ProxyFactory;
+import org.apache.dubbo.rpc.*;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -146,5 +143,28 @@ public class InjvmProtocolTest {
         exporters.add(exporter);
         service = proxy.getProxy(protocol.refer(DemoService.class, url));
         assertNull(service.getAsyncResult());
+    }
+
+    @Test
+    public void testInit() {
+        DemoService demoService = new DemoServiceImpl();
+        URL url = URL.valueOf("injvm://127.0.0.1/TestService").addParameter(INTERFACE_KEY,demoService.getClass().getName());
+        System.out.println("url"+url);
+        Invoker<DemoService> invoker = proxy.getInvoker(demoService, DemoService.class, url);
+
+
+        // 对象暴露
+        protocol.export(invoker);
+
+
+        ExtensionLoader<Protocol> extensionLoader = ExtensionLoader.getExtensionLoader(Protocol.class);
+
+        Protocol injvm = extensionLoader.getExtension("injvm");
+        // 代理模式未生成@Adaptive注解的方法.
+        // List<ProtocolServer> servers = protocol.getServers();
+
+
+
+
     }
 }

@@ -139,7 +139,7 @@ class URL implements Serializable {
 
     private transient String address;
 
-    protected URL() {
+    public URL() {
         this.protocol = null;
         this.username = null;
         this.password = null;
