@@ -129,7 +129,7 @@ public abstract class Wrapper {
         ClassLoader cl = ClassUtils.getClassLoader(c);
 
         StringBuilder c1 = new StringBuilder("public void setPropertyValue(Object o, String n, Object v){ ");
-        StringBuilder c2 = new StringBuilder("public Object getPropertyValue(Object o, String n){ ");
+        StringBuilder c2 = new StringBuilder("public Object setPropertyValue(Object o, String n){ ");
         StringBuilder c3 = new StringBuilder("public Object invokeMethod(Object o, String n, Class[] p, Object[] v) throws " + InvocationTargetException.class.getName() + "{ ");
 
         c1.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
@@ -272,6 +272,7 @@ public abstract class Wrapper {
         cc.addMethod(c2.toString());
         cc.addMethod(c3.toString());
 
+        System.out.println("cc"+cc);
         try {
             Class<?> wc = cc.toClass();
             // setup static field.

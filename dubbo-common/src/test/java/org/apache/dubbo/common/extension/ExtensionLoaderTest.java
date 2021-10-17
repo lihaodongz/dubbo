@@ -16,6 +16,7 @@
  */
 package org.apache.dubbo.common.extension;
 
+import javassist.util.proxy.ProxyFactory;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.convert.Converter;
 import org.apache.dubbo.common.convert.StringToBooleanConverter;

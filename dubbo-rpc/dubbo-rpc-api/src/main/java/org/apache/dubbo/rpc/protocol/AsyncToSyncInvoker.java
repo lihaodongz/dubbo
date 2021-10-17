@@ -47,6 +47,12 @@ public class AsyncToSyncInvoker<T> implements Invoker<T> {
         return invoker.getInterface();
     }
 
+    /**
+     * dubbo 同步转异步的实现方式
+     * @param invocation
+     * @return
+     * @throws RpcException
+     */
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
         Result asyncResult = invoker.invoke(invocation);

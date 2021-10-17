@@ -147,24 +147,34 @@ public class InjvmProtocolTest {
 
     @Test
     public void testInit() {
+
         DemoService demoService = new DemoServiceImpl();
         URL url = URL.valueOf("injvm://127.0.0.1/TestService").addParameter(INTERFACE_KEY,demoService.getClass().getName());
         System.out.println("url"+url);
+        // 代理工厂生成代理对象
         Invoker<DemoService> invoker = proxy.getInvoker(demoService, DemoService.class, url);
-
-
-        // 对象暴露
+        // 对象暴露 暴露demoService
+        // protocol是代理对象 {ProtocolListenerWrapper,ProtocolFilterWrapper}
+        // Protocol$Adaptive->ProtocolFilterWrapper->ProtocolListenerWrapper->InjvmProtocol
         protocol.export(invoker);
+        // AsyncToSyncInvoker
+        Invoker<DemoService> refer = protocol.refer(DemoService.class,url);
+        // ProtocolFilterWrapper->ProtocolListenerWrapper->InjvmProtocol->AsyncToSyncInvoker
+        DemoService service = proxy.getProxy(refer);
+        // InvokerInvocationHandler->FilterNode
+        String asyncResult = service.getAsyncResult();
 
 
-        ExtensionLoader<Protocol> extensionLoader = ExtensionLoader.getExtensionLoader(Protocol.class);
+   /*     ExtensionLoader<Protocol> extensionLoader = ExtensionLoader.getExtensionLoader(Protocol.class);
 
         Protocol injvm = extensionLoader.getExtension("injvm");
+
+        InjvmProtocol injvmProtocol  = (InjvmProtocol) injvm;
+
+        System.out.println(injvmProtocol.getExporterMap());*/
         // 代理模式未生成@Adaptive注解的方法.
         // List<ProtocolServer> servers = protocol.getServers();
 
-
-
-
+        System.out.println(asyncResult);
     }
 }

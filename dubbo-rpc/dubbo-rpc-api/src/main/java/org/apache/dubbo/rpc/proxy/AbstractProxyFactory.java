@@ -46,6 +46,7 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
     }
 
     @Override
+    // 根据invoker中的inteface参数解析interfaces参数
     public <T> T getProxy(Invoker<T> invoker, boolean generic) throws RpcException {
         Set<Class<?>> interfaces = new HashSet<>();
 
@@ -59,6 +60,7 @@ public abstract class AbstractProxyFactory implements ProxyFactory {
         }
 
         if (generic) {
+            // 泛化调用
             if (GenericService.class.equals(invoker.getInterface()) || !GenericService.class.isAssignableFrom(invoker.getInterface())) {
                 interfaces.add(com.alibaba.dubbo.rpc.service.GenericService.class);
             }

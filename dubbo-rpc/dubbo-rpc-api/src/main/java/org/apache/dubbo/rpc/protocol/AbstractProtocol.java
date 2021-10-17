@@ -46,6 +46,7 @@ public abstract class AbstractProtocol implements Protocol {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
+    // 暴露服务的数量
     protected final Map<String, Exporter<?>> exporterMap = new ConcurrentHashMap<String, Exporter<?>>();
 
     /**
@@ -55,6 +56,7 @@ public abstract class AbstractProtocol implements Protocol {
 
     //TODO SoftReference
     protected final Set<Invoker<?>> invokers = new ConcurrentHashSet<Invoker<?>>();
+
 
     protected static String serviceKey(URL url) {
         int port = url.getParameter(Constants.BIND_PORT_KEY, url.getPort());
@@ -99,6 +101,7 @@ public abstract class AbstractProtocol implements Protocol {
         }
     }
 
+    // 服务引用的时候
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
         return new AsyncToSyncInvoker<>(protocolBindingRefer(type, url));

@@ -235,6 +235,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         }
 
         if (shouldDelay()) {
+            // 延迟服务暴露
             DELAY_EXPORT_EXECUTOR.schedule(this::doExport, getDelay(), TimeUnit.MILLISECONDS);
         } else {
             doExport();
@@ -361,6 +362,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
         List<URL> registryURLs = ConfigValidationUtils.loadRegistries(this, true);
 
+        // 协议的数量,接口的暴露是协议的次数来的.假设设置了两个协议,一次接口的将在不同的协议场景下被暴露
         int protocolConfigNum = protocols.size();
         for (ProtocolConfig protocolConfig : protocols) {
             String pathKey = URL.buildKey(getContextPath(protocolConfig)
@@ -394,11 +396,13 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         if (metadataReportConfig != null && metadataReportConfig.isValid()) {
             map.putIfAbsent(METADATA_KEY, REMOTE_METADATA_STORAGE_TYPE);
         }
+        // 服务暴露是按照方法暴露的
         if (CollectionUtils.isNotEmpty(getMethods())) {
             for (MethodConfig method : getMethods()) {
                 AbstractConfig.appendParameters(map, method, method.getName());
                 String retryKey = method.getName() + RETRY_SUFFIX;
                 if (map.containsKey(retryKey)) {
+                    // 处理调用次数重试
                     String retryValue = map.remove(retryKey);
                     if (FALSE_VALUE.equals(retryValue)) {
                         map.put(method.getName() + RETRIES_SUFFIX, ZERO_VALUE);
@@ -502,7 +506,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                     .getExtension(url.getProtocol()).getConfigurator(url).configure(url);
         }
-
+        // 处理scope 作用域
         String scope = url.getParameter(SCOPE_KEY);
         // don't export when none is configured
         if (!SCOPE_NONE.equalsIgnoreCase(scope)) {
@@ -569,7 +573,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     /**
-     * always export injvm
+     * always export injvm 服务暴露本地
      */
     private void exportLocal(URL url) {
         URL local = URLBuilder.from(url)

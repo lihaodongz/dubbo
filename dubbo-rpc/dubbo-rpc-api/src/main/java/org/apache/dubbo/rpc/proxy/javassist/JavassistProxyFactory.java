@@ -38,8 +38,9 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
     @Override
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
         // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
+        // wrapper 会将类的方法统一包装成一个方法进行处理 详情见c3.class
         final Wrapper wrapper = Wrapper.getWrapper(proxy.getClass().getName().indexOf('$') < 0 ? proxy.getClass() : type);
-        return new AbstractProxyInvoker<T>(proxy, type, url) {
+        AbstractProxyInvoker<T> abstractProxyInvoker = new AbstractProxyInvoker<T>(proxy, type, url) {
             @Override
             protected Object doInvoke(T proxy, String methodName,
                                       Class<?>[] parameterTypes,
@@ -47,6 +48,7 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
                 return wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
             }
         };
+        return abstractProxyInvoker;
     }
 
 }

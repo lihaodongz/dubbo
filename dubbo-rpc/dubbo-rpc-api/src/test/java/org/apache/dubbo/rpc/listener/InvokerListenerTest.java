@@ -20,6 +20,7 @@ package org.apache.dubbo.rpc.listener;
 
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.rpc.InvokerListener;
+import org.apache.dubbo.rpc.ProxyFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -34,5 +35,10 @@ public class InvokerListenerTest {
         MapInvokerListener listener = (MapInvokerListener) mapInvokerListener;
         Assertions.assertEquals("referred", listener.getReferred());
         Assertions.assertEquals("destroyed", listener.getDestroyed());
+    }
+
+    @Test
+    public void testProxyFactory(){
+         ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
     }
 }

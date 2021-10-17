@@ -297,4 +297,13 @@ public class ServiceConfigTest {
             service.unexport();
         }
     }
+
+    @Test
+    public void testServiceConfig(){
+        try {
+            service.export();
+        }catch (Exception e){
+
+        }
+    }
 }

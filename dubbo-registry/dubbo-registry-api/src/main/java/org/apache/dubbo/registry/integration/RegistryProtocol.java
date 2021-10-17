@@ -194,6 +194,7 @@ public class RegistryProtocol implements Protocol {
 
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
+        // 注册的url
         URL registryUrl = getRegistryUrl(originInvoker);
         // url to export locally
         URL providerUrl = getProviderUrl(originInvoker);
@@ -352,7 +353,7 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * Get an instance of registry based on the address of invoker
-     *
+     * registry://localhost:30996/org.apache.dubbo.registry.RegistryService?application=test-protocol-random-port&dubbo=2.0.2&export=dubbo%3A%2F%2F172.18.251.124%3A20880%2Forg.apache.dubbo.config.api.DemoService%3Fanyhost%3Dtrue%26application%3Dtest-protocol-random-port%26bind.ip%3D172.18.251.124%26bind.port%3D20880%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.config.api.DemoService%26metadata-type%3Dremote%26methods%3DgetUsers%2CsayName%2Cecho%2CgetBox%2CthrowDemoException%26pid%3D93656%26release%3D%26service.name%3DServiceBean%3A%2Forg.apache.dubbo.config.api.DemoService%26side%3Dprovider%26timestamp%3D1634450135490&pid=93656&registry=zookeeper&timestamp=1634450135482
      * @param originInvoker
      * @return
      */
