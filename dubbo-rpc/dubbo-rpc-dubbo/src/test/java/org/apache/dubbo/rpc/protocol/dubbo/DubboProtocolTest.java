@@ -257,4 +257,10 @@ public class DubboProtocolTest {
         }
 
     }
+
+
+    @Test
+    public void testExport(){
+
+    }
 }
