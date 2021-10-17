@@ -36,7 +36,7 @@ public interface Cluster {
     String DEFAULT = "failover";
 
     /**
-     * Merge the directory invokers to a virtual invoker.
+     * Merge the directory invokers to a virtual invoker. 合并invokers 成为一个虚拟的invoker
      *
      * @param <T>
      * @param directory
