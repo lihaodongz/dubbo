@@ -40,7 +40,7 @@ import org.apache.dubbo.rpc.support.RpcUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.dubbo.common.URL.buildKey;
@@ -123,7 +123,7 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
         setParameterTypesDesc(desc);
 
         try {
-            if (ConfigurationUtils.getSystemConfiguration().getBoolean(SERIALIZATION_SECURITY_CHECK_KEY, true)) {
+            if (ConfigurationUtils.getSystemConfiguration().getBoolean(SERIALIZATION_SECURITY_CHECK_KEY, false)) {
                 CodecSupport.checkSerialization(path, version, serializationType);
             }
             Object[] args = DubboCodec.EMPTY_OBJECT_ARRAY;
@@ -166,7 +166,7 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
             if (map != null && map.size() > 0) {
                 Map<String, Object> attachment = getObjectAttachments();
                 if (attachment == null) {
-                    attachment = new LinkedHashMap<>();
+                    attachment = new HashMap<>();
                 }
                 attachment.putAll(map);
                 setObjectAttachments(attachment);

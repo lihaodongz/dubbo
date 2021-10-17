@@ -17,7 +17,7 @@
 package org.apache.dubbo.spring.boot.context.event;
 
 import org.apache.dubbo.common.lang.ShutdownHookCallbacks;
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -34,12 +34,12 @@ public class AwaitingNonWebApplicationListenerTest {
 
     @Before
     public void before() {
-        DubboBootstrap.reset();
+        ApplicationModel.reset();
     }
 
     @After
     public void after() {
-        DubboBootstrap.reset();
+        ApplicationModel.reset();
     }
 
     @Test

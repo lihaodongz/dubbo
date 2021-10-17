@@ -90,7 +90,7 @@ public class ZookeeperServiceDiscoveryTest {
         assertEquals(asList(serviceInstance), serviceInstances);
 
         Map<String, String> metadata = new HashMap<>();
-        metadata.put("message", "Hello,World");
+        //metadata.put("message", "Hello,World");
         serviceInstance.setMetadata(metadata);
         serviceInstance.getExtendParams().put(INSTANCE_REVISION_UPDATED_KEY, "true");
 

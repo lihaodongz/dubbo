@@ -17,10 +17,9 @@
 package org.apache.dubbo.spring.boot.autoconfigure;
 
 import org.apache.dubbo.config.spring.beans.factory.annotation.ReferenceAnnotationBeanPostProcessor;
-import org.apache.dubbo.config.spring.beans.factory.annotation.ServiceAnnotationPostProcessor;
+import org.apache.dubbo.config.spring.beans.factory.annotation.ServiceClassPostProcessor;
 
 import com.alibaba.spring.context.config.ConfigurationBeanBinder;
-import org.apache.dubbo.config.spring.util.DubboBeanUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.ObjectProvider;
@@ -28,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -63,7 +61,10 @@ public class DubboRelaxedBinding2AutoConfigurationTest {
     private ConfigurationBeanBinder dubboConfigBinder;
 
     @Autowired
-    private ObjectProvider<ServiceAnnotationPostProcessor> serviceAnnotationPostProcessor;
+    private ObjectProvider<ServiceClassPostProcessor> serviceClassPostProcessor;
+
+    @Autowired
+    private ObjectProvider<ReferenceAnnotationBeanPostProcessor> referenceAnnotationBeanPostProcessor;
 
     @Autowired
     private Environment environment;
@@ -71,20 +72,15 @@ public class DubboRelaxedBinding2AutoConfigurationTest {
     @Autowired
     private Map<String, Environment> environments;
 
-    @Autowired
-    private ApplicationContext applicationContext;
-
     @Test
     public void testBeans() {
 
-
         assertTrue(ClassUtils.isAssignableValue(BinderDubboConfigBinder.class, dubboConfigBinder));
 
-        assertNotNull(serviceAnnotationPostProcessor);
-        assertNotNull(serviceAnnotationPostProcessor.getIfAvailable());
-
-        ReferenceAnnotationBeanPostProcessor referenceAnnotationBeanPostProcessor =  DubboBeanUtils.getReferenceAnnotationBeanPostProcessor(applicationContext);
+        assertNotNull(serviceClassPostProcessor);
+        assertNotNull(serviceClassPostProcessor.getIfAvailable());
         assertNotNull(referenceAnnotationBeanPostProcessor);
+        assertNotNull(referenceAnnotationBeanPostProcessor.getIfAvailable());
 
         assertNotNull(environment);
         assertNotNull(environments);

@@ -17,7 +17,6 @@
 package org.apache.dubbo.common;
 
 import org.apache.dubbo.common.utils.PojoUtils;
-
 import org.junit.jupiter.api.Test;
 
 public class PojoUtilsForNonPublicStaticTest {

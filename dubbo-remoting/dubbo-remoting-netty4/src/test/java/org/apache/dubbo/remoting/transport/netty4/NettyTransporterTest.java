@@ -17,7 +17,6 @@
 package org.apache.dubbo.remoting.transport.netty4;
 
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.url.component.ServiceConfigURL;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.apache.dubbo.remoting.Channel;
 import org.apache.dubbo.remoting.Constants;
@@ -36,7 +35,7 @@ public class NettyTransporterTest {
     @Test
     public void shouldAbleToBindNetty4() throws Exception {
         int port = NetUtils.getAvailablePort();
-        URL url = new ServiceConfigURL("telnet", "localhost", port,
+        URL url = new URL("telnet", "localhost", port,
                 new String[]{Constants.BIND_PORT_KEY, String.valueOf(port)});
 
         RemotingServer server = new NettyTransporter().bind(url, new ChannelHandlerAdapter());
@@ -49,7 +48,7 @@ public class NettyTransporterTest {
         final CountDownLatch lock = new CountDownLatch(1);
 
         int port = NetUtils.getAvailablePort();
-        URL url = new ServiceConfigURL("telnet", "localhost", port,
+        URL url = new URL("telnet", "localhost", port,
                 new String[]{Constants.BIND_PORT_KEY, String.valueOf(port)});
 
         new NettyTransporter().bind(url, new ChannelHandlerAdapter() {

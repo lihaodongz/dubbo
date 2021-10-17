@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.dubbo.common.constants.CommonConstants.FILE_KEY;
+import static org.apache.dubbo.registry.Constants.CONSUMER_PROTOCOL;
 import static org.apache.dubbo.registry.Constants.DEFAULT_REGISTRY_RETRY_PERIOD;
 import static org.apache.dubbo.registry.Constants.REGISTRY_RETRY_PERIOD_KEY;
 
@@ -143,7 +144,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
-    public void removeFailedSubscribed(URL url, NotifyListener listener) {
+    private void removeFailedSubscribed(URL url, NotifyListener listener) {
         Holder h = new Holder(url, listener);
         FailedSubscribedTask f = failedSubscribed.remove(h);
         if (f != null) {
@@ -209,7 +210,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             // If the startup detection is opened, the Exception is thrown directly.
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
-                    && !(url.getPort() == 0);
+                    && !CONSUMER_PROTOCOL.equals(url.getProtocol());
             boolean skipFailback = t instanceof SkipFailbackWrapperException;
             if (check || skipFailback) {
                 if (skipFailback) {
@@ -258,7 +259,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             // If the startup detection is opened, the Exception is thrown directly.
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
-                    && !(url.getPort() == 0);
+                    && !CONSUMER_PROTOCOL.equals(url.getProtocol());
             boolean skipFailback = t instanceof SkipFailbackWrapperException;
             if (check || skipFailback) {
                 if (skipFailback) {
@@ -380,9 +381,6 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                 logger.info("Recover register url " + recoverRegistered);
             }
             for (URL url : recoverRegistered) {
-                // remove fail registry or unRegistry task first.
-                removeFailedRegistered(url);
-                removeFailedUnregistered(url);
                 addFailedRegistered(url);
             }
         }
@@ -395,8 +393,6 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             for (Map.Entry<URL, Set<NotifyListener>> entry : recoverSubscribed.entrySet()) {
                 URL url = entry.getKey();
                 for (NotifyListener listener : entry.getValue()) {
-                    // First remove other tasks to ensure that addFailedSubscribed can succeed.
-                    removeFailedSubscribed(url, listener);
                     addFailedSubscribed(url, listener);
                 }
             }

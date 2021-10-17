@@ -23,6 +23,8 @@ import org.apache.dubbo.common.lang.ShutdownHookCallbacks;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.StringUtils;
+import org.apache.dubbo.event.EventListener;
+import org.apache.dubbo.registry.client.event.ServiceInstancesChangedEvent;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.io.FileUtils;
@@ -52,7 +54,7 @@ import static org.apache.dubbo.common.config.configcenter.file.FileSystemDynamic
  * @see FileSystemDynamicConfiguration
  * @since 2.7.5
  */
-public class FileSystemServiceDiscovery extends AbstractServiceDiscovery {
+public class FileSystemServiceDiscovery extends AbstractServiceDiscovery implements EventListener<ServiceInstancesChangedEvent> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -61,7 +63,12 @@ public class FileSystemServiceDiscovery extends AbstractServiceDiscovery {
     private FileSystemDynamicConfiguration dynamicConfiguration;
 
     @Override
-    public void doInitialize(URL registryURL) throws Exception {
+    public void onEvent(ServiceInstancesChangedEvent event) {
+
+    }
+
+    @Override
+    public void initialize(URL registryURL) throws Exception {
         dynamicConfiguration = createDynamicConfiguration(registryURL);
         registerDubboShutdownHook();
         registerListener();
@@ -84,7 +91,7 @@ public class FileSystemServiceDiscovery extends AbstractServiceDiscovery {
     }
 
     @Override
-    public void doDestroy() throws Exception {
+    public void destroy() throws Exception {
         dynamicConfiguration.close();
         releaseAndRemoveRegistrationFiles();
     }
@@ -101,7 +108,7 @@ public class FileSystemServiceDiscovery extends AbstractServiceDiscovery {
     }
 
     private String getServiceInstanceId(ServiceInstance serviceInstance) {
-        String id = serviceInstance.getAddress();
+        String id = serviceInstance.getId();
         if (StringUtils.isBlank(id)) {
             return serviceInstance.getHost() + "." + serviceInstance.getPort();
         }
@@ -126,10 +133,8 @@ public class FileSystemServiceDiscovery extends AbstractServiceDiscovery {
         return null;
     }
 
-
     @Override
-    public void doRegister(ServiceInstance serviceInstance) throws RuntimeException {
-        this.serviceInstance = serviceInstance;
+    public void doRegister(ServiceInstance serviceInstance) {
         String serviceInstanceId = getServiceInstanceId(serviceInstance);
         String serviceName = getServiceName(serviceInstance);
         String content = toJSONString(serviceInstance);
@@ -161,13 +166,14 @@ public class FileSystemServiceDiscovery extends AbstractServiceDiscovery {
         });
     }
 
+
     @Override
-    public void doUpdate(ServiceInstance serviceInstance) throws RuntimeException {
+    public void doUpdate(ServiceInstance serviceInstance) {
         register(serviceInstance);
     }
 
     @Override
-    public void doUnregister(ServiceInstance serviceInstance) throws RuntimeException {
+    public void unregister(ServiceInstance serviceInstance) throws RuntimeException {
         String key = getServiceInstanceId(serviceInstance);
         String group = getServiceName(serviceInstance);
         releaseFileLock(key, group);

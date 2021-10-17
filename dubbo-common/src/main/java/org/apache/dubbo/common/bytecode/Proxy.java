@@ -21,6 +21,7 @@ import org.apache.dubbo.common.utils.ReflectUtils;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -151,7 +152,7 @@ public abstract class Proxy {
                             if (null == proxy) {
                                 cache.remove(key);
                             } else {
-                                cache.put(key, new SoftReference<>(proxy));
+                                cache.put(key, new WeakReference<Proxy>(proxy));
                             }
                         }
                     }
@@ -199,7 +200,7 @@ public abstract class Proxy {
                     }
                     code.append(" Object ret = handler.invoke(this, methods[").append(ix).append("], args);");
                     if (!Void.TYPE.equals(rt)) {
-                        code.append(" return ").append(asArgument(rt, "ret")).append(';');
+                        code.append(" return ").append(asArgument(rt, "ret")).append(";");
                     }
 
                     methods.add(method);
@@ -250,7 +251,7 @@ public abstract class Proxy {
                 if (proxy == null) {
                     cache.remove(key);
                 } else {
-                    cache.put(key, new SoftReference<Proxy>(proxy));
+                    cache.put(key, new WeakReference<Proxy>(proxy));
                 }
                 cache.notifyAll();
             }

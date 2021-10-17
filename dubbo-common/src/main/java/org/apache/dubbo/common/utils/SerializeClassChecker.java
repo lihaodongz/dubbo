@@ -17,6 +17,7 @@
 package org.apache.dubbo.common.utils;
 
 import org.apache.dubbo.common.beanutil.JavaBeanSerializeUtil;
+import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 
@@ -25,11 +26,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.apache.dubbo.common.constants.CommonConstants.CLASS_DESERIALIZE_ALLOWED_LIST;
-import static org.apache.dubbo.common.constants.CommonConstants.CLASS_DESERIALIZE_BLOCKED_LIST;
-import static org.apache.dubbo.common.constants.CommonConstants.CLASS_DESERIALIZE_BLOCK_ALL;
-import static org.apache.dubbo.common.constants.CommonConstants.SERIALIZE_BLOCKED_LIST_FILE_PATH;
 
 public class SerializeClassChecker {
     private static final Logger logger = LoggerFactory.getLogger(SerializeClassChecker.class);
@@ -47,16 +43,16 @@ public class SerializeClassChecker {
     private final AtomicLong counter = new AtomicLong(0);
 
     private SerializeClassChecker() {
-        String blockAllClassExceptAllow = System.getProperty(CLASS_DESERIALIZE_BLOCK_ALL, "false");
+        String blockAllClassExceptAllow = System.getProperty(CommonConstants.CLASS_DESERIALIZE_BLOCK_ALL, "false");
         BLOCK_ALL_CLASS_EXCEPT_ALLOW = Boolean.parseBoolean(blockAllClassExceptAllow);
 
         String[] lines;
         try {
             ClassLoader classLoader = ClassUtils.getClassLoader(JavaBeanSerializeUtil.class);
             if (classLoader != null) {
-                lines = IOUtils.readLines(classLoader.getResourceAsStream(SERIALIZE_BLOCKED_LIST_FILE_PATH));
+                lines = IOUtils.readLines(classLoader.getResourceAsStream(CommonConstants.SERIALIZE_BLOCKED_LIST_FILE_PATH));
             } else {
-                lines = IOUtils.readLines(ClassLoader.getSystemResourceAsStream(SERIALIZE_BLOCKED_LIST_FILE_PATH));
+                lines = IOUtils.readLines(ClassLoader.getSystemResourceAsStream(CommonConstants.SERIALIZE_BLOCKED_LIST_FILE_PATH));
             }
             for (String line : lines) {
                 line = line.trim();
@@ -70,8 +66,8 @@ public class SerializeClassChecker {
             logger.error("Failed to load blocked class list! Will ignore default blocked list.", e);
         }
 
-        String allowedClassList = System.getProperty(CLASS_DESERIALIZE_ALLOWED_LIST, "").trim().toLowerCase(Locale.ROOT);
-        String blockedClassList = System.getProperty(CLASS_DESERIALIZE_BLOCKED_LIST, "").trim().toLowerCase(Locale.ROOT);
+        String allowedClassList = System.getProperty(CommonConstants.CLASS_DESERIALIZE_ALLOWED_LIST, "").trim().toLowerCase(Locale.ROOT);
+        String blockedClassList = System.getProperty(CommonConstants.CLASS_DESERIALIZE_BLOCKED_LIST, "").trim().toLowerCase(Locale.ROOT);
 
         if (StringUtils.isNotEmpty(allowedClassList)) {
             String[] classStrings = allowedClassList.trim().split(",");
@@ -143,7 +139,7 @@ public class SerializeClassChecker {
                 "Class name: " + name + " . " +
                 "This means currently maybe being attacking by others." +
                 "If you are sure this is a mistake, " +
-                "please add this class name to `" + CLASS_DESERIALIZE_ALLOWED_LIST +
+                "please add this class name to `" + CommonConstants.CLASS_DESERIALIZE_ALLOWED_LIST +
                 "` as a system environment property.";
         if (counter.incrementAndGet() % 1000 == 0 || counter.get() < 100) {
             logger.error(notice);

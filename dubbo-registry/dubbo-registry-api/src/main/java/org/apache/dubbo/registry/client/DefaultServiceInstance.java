@@ -18,17 +18,11 @@ package org.apache.dubbo.registry.client;
 
 import org.apache.dubbo.metadata.MetadataInfo;
 
-import com.alibaba.fastjson.JSON;
-
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import static org.apache.dubbo.common.constants.CommonConstants.REVISION_KEY;
-import static org.apache.dubbo.registry.client.metadata.ServiceInstanceMetadataUtils.ENDPOINTS;
 
 /**
  * The default implementation of {@link ServiceInstance}.
@@ -39,59 +33,46 @@ public class DefaultServiceInstance implements ServiceInstance {
 
     private static final long serialVersionUID = 1149677083747278100L;
 
-    private String rawAddress;
+    private String id;
 
     private String serviceName;
 
     private String host;
 
-    private int port;
+    private Integer port;
 
-    private boolean enabled = true;
+    private boolean enabled;
 
-    private boolean healthy = true;
+    private boolean healthy;
 
     private Map<String, String> metadata = new HashMap<>();
 
     private transient String address;
     private transient MetadataInfo serviceMetadata;
     // used at runtime
-    private transient String registryCluster; // extendParams can be more flexiable, but one single property uses less space
-    private transient Map<String, String> extendParams;
-    private transient List<Endpoint> endpoints;
+    private transient Map<String, String> extendParams = new HashMap<>();
 
     public DefaultServiceInstance() {
     }
 
-    public DefaultServiceInstance(DefaultServiceInstance other) {
-        this.serviceName = other.serviceName;
-        this.host = other.host;
-        this.port = other.port;
-        this.enabled = other.enabled;
-        this.healthy = other.healthy;
-        this.metadata = other.metadata;
-        this.serviceMetadata = other.serviceMetadata;
-        this.registryCluster = other.registryCluster;
-        this.extendParams = other.extendParams;
-        this.endpoints = other.endpoints;
-        this.address = null;
-    }
-
-    public DefaultServiceInstance(String serviceName, String host, Integer port) {
-        if (port == null || port < 1) {
-            throw new IllegalArgumentException("The port value is illegal, the value is " + port);
+    public DefaultServiceInstance(String id, String serviceName, String host, Integer port) {
+        if (port != null && port.intValue() < 1) {
+            throw new IllegalArgumentException("The port must be greater than zero!");
         }
+        this.id = id;
         this.serviceName = serviceName;
         this.host = host;
         this.port = port;
+        this.enabled = true;
+        this.healthy = true;
     }
 
-    public void setRawAddress(String rawAddress) {
-        this.rawAddress = rawAddress;
+    public DefaultServiceInstance(String serviceName, String host, Integer port) {
+        this(host + ":" + port, serviceName, host, port);
     }
 
-    public DefaultServiceInstance(String serviceName) {
-        this.serviceName = serviceName;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setServiceName(String serviceName) {
@@ -100,6 +81,11 @@ public class DefaultServiceInstance implements ServiceInstance {
 
     public void setHost(String host) {
         this.host = host;
+    }
+
+    @Override
+    public String getId() {
+        return id;
     }
 
     @Override
@@ -112,12 +98,12 @@ public class DefaultServiceInstance implements ServiceInstance {
         return host;
     }
 
-    public void setPort(int port) {
+    public void setPort(Integer port) {
         this.port = port;
     }
 
     @Override
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 
@@ -129,8 +115,8 @@ public class DefaultServiceInstance implements ServiceInstance {
         return address;
     }
 
-    private static String getAddress(String host, Integer port) {
-        return port != null && port <= 0 ? host : host + ':' + port;
+    private static String getAddress(String host, int port) {
+        return port <= 0 ? host : host + ':' + port;
     }
 
     @Override
@@ -157,50 +143,16 @@ public class DefaultServiceInstance implements ServiceInstance {
     }
 
     @Override
-    public SortedMap<String, String> getSortedMetadata() {
-        return new TreeMap<>(getMetadata());
-    }
-
-    @Override
-    public String getRegistryCluster() {
-        return registryCluster;
-    }
-
-    public void setRegistryCluster(String registryCluster) {
-        this.registryCluster = registryCluster;
-    }
-
-    @Override
     public Map<String, String> getExtendParams() {
-        if (extendParams == null) {
-            extendParams = new HashMap<>();
-        }
         return extendParams;
-    }
-
-    public List<Endpoint> getEndpoints() {
-        if (endpoints != null) {
-            return endpoints;
-        }
-        return JSON.parseArray(metadata.get(ENDPOINTS), Endpoint.class);
-    }
-
-    public DefaultServiceInstance copy(Endpoint endpoint) {
-        DefaultServiceInstance copyOfInstance = new DefaultServiceInstance(this);
-        copyOfInstance.setPort(endpoint.getPort());
-        return copyOfInstance;
     }
 
     @Override
     public Map<String, String> getAllParams() {
-        if (extendParams == null) {
-            return metadata;
-        } else {
-            Map<String, String> allParams = new HashMap<>((int) ((metadata.size() + extendParams.size()) / 0.75f + 1));
-            allParams.putAll(metadata);
-            allParams.putAll(extendParams);
-            return allParams;
-        }
+        Map<String, String> allParams = new HashMap<>((int) ((metadata.size() + extendParams.size()) / 0.75f + 1));
+        allParams.putAll(metadata);
+        allParams.putAll(extendParams);
+        return allParams;
     }
 
     public void setMetadata(Map<String, String> metadata) {
@@ -256,11 +208,8 @@ public class DefaultServiceInstance implements ServiceInstance {
 
     @Override
     public String toString() {
-        return rawAddress == null ? toFullString() : rawAddress;
-    }
-
-    public String toFullString() {
         return "DefaultServiceInstance{" +
+                "id='" + id + '\'' +
                 ", serviceName='" + serviceName + '\'' +
                 ", host='" + host + '\'' +
                 ", port=" + port +
@@ -268,34 +217,5 @@ public class DefaultServiceInstance implements ServiceInstance {
                 ", healthy=" + healthy +
                 ", metadata=" + metadata +
                 '}';
-    }
-
-    public static class Endpoint {
-        Integer port;
-        String protocol;
-
-        public Endpoint() {
-        }
-
-        public Endpoint(Integer port, String protocol) {
-            this.port = port;
-            this.protocol = protocol;
-        }
-
-        public Integer getPort() {
-            return port;
-        }
-
-        public void setPort(Integer port) {
-            this.port = port;
-        }
-
-        public String getProtocol() {
-            return protocol;
-        }
-
-        public void setProtocol(String protocol) {
-            this.protocol = protocol;
-        }
     }
 }

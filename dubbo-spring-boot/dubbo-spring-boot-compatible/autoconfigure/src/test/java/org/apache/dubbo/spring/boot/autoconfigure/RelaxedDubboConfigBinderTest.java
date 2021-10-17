@@ -19,7 +19,7 @@ package org.apache.dubbo.spring.boot.autoconfigure;
 import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 
 import com.alibaba.spring.context.config.ConfigurationBeanBinder;
 import org.junit.After;
@@ -59,12 +59,12 @@ public class RelaxedDubboConfigBinderTest {
 
     @Before
     public void init() {
-        DubboBootstrap.reset();
+        ApplicationModel.reset();
     }
 
     @After
     public void destroy() {
-        DubboBootstrap.reset();
+        ApplicationModel.reset();
     }
 
     @Test

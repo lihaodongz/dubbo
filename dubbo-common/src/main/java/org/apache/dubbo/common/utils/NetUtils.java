@@ -33,7 +33,6 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
@@ -70,7 +69,7 @@ public class NetUtils {
     private static final int RND_PORT_RANGE = 10000;
 
     // valid port range is (0, 65535]
-    private static final int MIN_PORT = 1;
+    private static final int MIN_PORT = 0;
     private static final int MAX_PORT = 65535;
 
     private static final Pattern ADDRESS_PATTERN = Pattern.compile("^\\d{1,3}(\\.\\d{1,3}){3}\\:\\d{1,5}$");
@@ -83,31 +82,25 @@ public class NetUtils {
     private static final String SPLIT_IPV4_CHARACTER = "\\.";
     private static final String SPLIT_IPV6_CHARACTER = ":";
 
-    /**
-     * store the used port.
-     * the set used only on the synchronized method.
-     */
-    private static BitSet USED_PORT = new BitSet(65536);
-
     public static int getRandomPort() {
         return RND_PORT_START + ThreadLocalRandom.current().nextInt(RND_PORT_RANGE);
     }
 
-    public synchronized static int getAvailablePort() {
-        int randomPort = getRandomPort();
-        return getAvailablePort(randomPort);
+    public static int getAvailablePort() {
+        try (ServerSocket ss = new ServerSocket()) {
+            ss.bind(null);
+            return ss.getLocalPort();
+        } catch (IOException e) {
+            return getRandomPort();
+        }
     }
 
-    public synchronized static int getAvailablePort(int port) {
-        if (port < MIN_PORT) {
-            return port = MIN_PORT;
+    public static int getAvailablePort(int port) {
+        if (port <= 0) {
+            return getAvailablePort();
         }
         for (int i = port; i < MAX_PORT; i++) {
-            if (USED_PORT.get(i)) {
-                continue;
-            }
             try (ServerSocket ignored = new ServerSocket(i)) {
-                USED_PORT.set(i);
                 return i;
             } catch (IOException e) {
                 // continue
@@ -117,7 +110,7 @@ public class NetUtils {
     }
 
     public static boolean isInvalidPort(int port) {
-        return port < MIN_PORT || port > MAX_PORT;
+        return port <= MIN_PORT || port > MAX_PORT;
     }
 
     public static boolean isValidAddress(String address) {
@@ -242,9 +235,7 @@ public class NetUtils {
             return configIp;
         }
 
-        InetAddress localAddress = getLocalAddress();
-        String hostName = localAddress == null ? LOCALHOST_VALUE : localAddress.getHostName();
-        return getIpByHost(hostName);
+        return getIpByHost(getLocalAddress().getHostName());
     }
 
     /**

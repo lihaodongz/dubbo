@@ -14,6 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+<<<<<<< HEAD:dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/router/mesh/rule/virtualservice/match/BoolMatchTest.java
+
+package org.apache.dubbo.rpc.cluster.router.mesh.rule.virtualservice.match;
+
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class BoolMatchTest {
+=======
 package org.apache.dubbo.remoting.telnet.support;
 
 import org.apache.dubbo.remoting.Channel;
@@ -24,9 +36,24 @@ import org.mockito.Mockito;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+>>>>>>> dubbo-2.7.10:dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/ExitTelnetHandlerTest.java
 
 public class ExitTelnetHandlerTest {
     @Test
+<<<<<<< HEAD:dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/router/mesh/rule/virtualservice/match/BoolMatchTest.java
+    public void isMatch() {
+        BoolMatch boolMatch =  new BoolMatch();
+        boolMatch.setExact(true);
+
+
+        assertTrue(BoolMatch.isMatch(boolMatch,true));
+        assertFalse(BoolMatch.isMatch(boolMatch,false));
+
+        boolMatch.setExact(false);
+        assertFalse(BoolMatch.isMatch(boolMatch,true));
+        assertTrue(BoolMatch.isMatch(boolMatch,false));
+
+=======
     public void test() {
         Channel channel = Mockito.mock(Channel.class);
 
@@ -34,5 +61,6 @@ public class ExitTelnetHandlerTest {
         exitTelnetHandler.telnet(channel, null);
 
         verify(channel, times(1)).close();
+>>>>>>> dubbo-2.7.10:dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/ExitTelnetHandlerTest.java
     }
 }

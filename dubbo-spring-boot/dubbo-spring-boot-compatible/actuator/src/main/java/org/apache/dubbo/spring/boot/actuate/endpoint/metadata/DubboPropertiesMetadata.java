@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.SortedMap;
 
-import static org.apache.dubbo.config.spring.util.EnvironmentUtils.filterDubboProperties;
+import static org.apache.dubbo.spring.boot.util.DubboUtils.filterDubboProperties;
 
 /**
  * Dubbo Properties Metadata
@@ -31,6 +31,6 @@ import static org.apache.dubbo.config.spring.util.EnvironmentUtils.filterDubboPr
 public class DubboPropertiesMetadata extends AbstractDubboMetadata {
 
     public SortedMap<String, Object> properties() {
-        return (SortedMap) filterDubboProperties(environment);
+        return filterDubboProperties(environment);
     }
 }

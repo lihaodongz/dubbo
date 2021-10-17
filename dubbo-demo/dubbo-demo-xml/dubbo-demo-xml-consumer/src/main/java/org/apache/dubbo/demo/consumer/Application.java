@@ -18,7 +18,6 @@ package org.apache.dubbo.demo.consumer;
 
 import org.apache.dubbo.demo.DemoService;
 import org.apache.dubbo.demo.GreetingService;
-import org.apache.dubbo.demo.RestDemoService;
 
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -34,50 +33,27 @@ public class Application {
         context.start();
         DemoService demoService = context.getBean("demoService", DemoService.class);
         GreetingService greetingService = context.getBean("greetingService", GreetingService.class);
-        RestDemoService restDemoService = context.getBean("restDemoService", RestDemoService.class);
 
         new Thread(() -> {
             while (true) {
+                String greetings = greetingService.hello();
+                System.out.println(greetings + " from separated thread.");
                 try {
-                    String greetings = greetingService.hello();
-                    System.out.println(greetings + " from separated thread.");
-                } catch (Exception e) {
-//                    e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
-                }
-            }
-        }).start();
-
-        new Thread(() -> {
-            while (true) {
-                try {
-                    String restResult = restDemoService.sayHello("rest");
-                    System.out.println(restResult + " from separated thread.");
-                } catch (Exception e) {
                     e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
                 }
             }
         }).start();
 
         while (true) {
-            try {
-                CompletableFuture<String> hello = demoService.sayHelloAsync("world");
-                System.out.println("result: " + hello.get());
+            CompletableFuture<String> hello = demoService.sayHelloAsync("world");
+            System.out.println("result: " + hello.get());
 
-                String greetings = greetingService.hello();
-                System.out.println("result: " + greetings);
-            } catch (Exception e) {
-//                e.printStackTrace();
-            }
+            String greetings = greetingService.hello();
+            System.out.println("result: " + greetings);
 
-            Thread.sleep(5000);
+            Thread.sleep(500);
         }
     }
 }

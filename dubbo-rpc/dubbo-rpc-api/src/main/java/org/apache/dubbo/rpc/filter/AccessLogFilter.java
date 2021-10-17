@@ -165,18 +165,6 @@ public class AccessLogFilter implements Filter {
         }
     }
 
-    private AccessLogData buildAccessLogData(Invoker<?> invoker, Invocation inv) {
-        AccessLogData logData = AccessLogData.newLogData();
-        logData.setServiceName(invoker.getInterface().getName());
-        logData.setMethodName(inv.getMethodName());
-        logData.setVersion(invoker.getUrl().getVersion());
-        logData.setGroup(invoker.getUrl().getGroup());
-        logData.setInvocationTime(new Date());
-        logData.setTypes(inv.getParameterTypes());
-        logData.setArguments(inv.getArguments());
-        return logData;
-    }
-
     private void processWithServiceLogger(Set<AccessLogData> logSet) {
         for (Iterator<AccessLogData> iterator = logSet.iterator();
              iterator.hasNext();

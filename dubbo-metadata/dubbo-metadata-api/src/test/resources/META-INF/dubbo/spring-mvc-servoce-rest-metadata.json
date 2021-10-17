@@ -245,7 +245,20 @@
           "parameters": [
             {
               "type": "java.util.Map\u003cjava.lang.String,java.lang.Object\u003e",
-              "items": ["java.lang.String", "java.lang.Object"],
+              "items": [
+                {
+                  "type": "java.lang.String",
+                  "items": [],
+                  "enum": [],
+                  "properties": {}
+                },
+                {
+                  "type": "java.lang.Object",
+                  "items": [],
+                  "enum": [],
+                  "properties": {}
+                }
+              ],
               "enum": [],
               "properties": {}
             },
@@ -293,9 +306,24 @@
               "items": [],
               "enum": [],
               "properties": {
-                "name": "java.lang.String",
-                "id": "java.lang.Long",
-                "age": "java.lang.Integer"
+                "name": {
+                  "type": "java.lang.String",
+                  "items": [],
+                  "enum": [],
+                  "properties": {}
+                },
+                "id": {
+                  "type": "java.lang.Long",
+                  "items": [],
+                  "enum": [],
+                  "properties": {}
+                },
+                "age": {
+                  "type": "java.lang.Integer",
+                  "items": [],
+                  "enum": [],
+                  "properties": {}
+                }
               }
             }
           ]

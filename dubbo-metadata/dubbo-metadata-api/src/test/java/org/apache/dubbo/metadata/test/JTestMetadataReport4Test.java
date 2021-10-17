@@ -17,8 +17,6 @@
 package org.apache.dubbo.metadata.test;
 
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.metadata.report.identifier.KeyTypeEnum;
 import org.apache.dubbo.metadata.report.identifier.MetadataIdentifier;
 import org.apache.dubbo.metadata.report.identifier.ServiceMetadataIdentifier;
@@ -34,9 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * ZookeeperRegistry
  */
 public class JTestMetadataReport4Test extends AbstractMetadataReport {
-
-    private final static Logger logger = LoggerFactory.getLogger(JTestMetadataReport4Test.class);
-
 
     public JTestMetadataReport4Test(URL url) {
         super(url);

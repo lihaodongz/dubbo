@@ -21,9 +21,6 @@ import org.apache.dubbo.config.support.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.apache.dubbo.common.constants.CommonConstants.EXPORT_BACKGROUND_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.EXPORT_THREAD_NUM_KEY;
-
 /**
  * The service provider default configuration
  *
@@ -158,18 +155,23 @@ public class ProviderConfig extends AbstractServiceConfig {
     private Integer wait;
 
     /**
-     * Thread num for asynchronous export pool size
+     * Whether to use the default protocol
      */
-    private Integer exportThreadNum;
-
-    /**
-     * Whether export should run in background or not
-     */
-    private Boolean exportBackground;
+    private Boolean isDefault;
 
     @Deprecated
     public void setProtocol(String protocol) {
         this.protocols = new ArrayList<>(Arrays.asList(new ProtocolConfig(protocol)));
+    }
+
+    @Parameter(excluded = true)
+    public Boolean isDefault() {
+        return isDefault;
+    }
+
+    @Deprecated
+    public void setDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
     }
 
     @Parameter(excluded = true)
@@ -192,7 +194,7 @@ public class ProviderConfig extends AbstractServiceConfig {
     }
 
     @Deprecated
-    @Parameter(excluded = true, attribute = false)
+    @Parameter(excluded = true)
     public String getPath() {
         return getContextpath();
     }
@@ -397,7 +399,7 @@ public class ProviderConfig extends AbstractServiceConfig {
      * @deprecated {@link #getDispatcher()}
      */
     @Deprecated
-    @Parameter(excluded = true, attribute = false)
+    @Parameter(excluded = true)
     public String getDispather() {
         return getDispatcher();
     }
@@ -434,24 +436,6 @@ public class ProviderConfig extends AbstractServiceConfig {
 
     public void setWait(Integer wait) {
         this.wait = wait;
-    }
-
-    @Parameter(key = EXPORT_THREAD_NUM_KEY, excluded = true)
-    public Integer getExportThreadNum() {
-        return exportThreadNum;
-    }
-
-    public void setExportThreadNum(Integer exportThreadNum) {
-        this.exportThreadNum = exportThreadNum;
-    }
-
-    @Parameter(key = EXPORT_BACKGROUND_KEY, excluded = true)
-    public Boolean getExportBackground() {
-        return exportBackground;
-    }
-
-    public void setExportBackground(Boolean exportBackground) {
-        this.exportBackground = exportBackground;
     }
 
     @Override

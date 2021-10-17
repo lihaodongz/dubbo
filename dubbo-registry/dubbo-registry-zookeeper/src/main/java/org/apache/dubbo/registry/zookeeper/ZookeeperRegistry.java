@@ -17,14 +17,13 @@
 package org.apache.dubbo.registry.zookeeper;
 
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
+import org.apache.dubbo.common.URLBuilder;
+import org.apache.dubbo.common.URLStrParser;
 import org.apache.dubbo.common.utils.CollectionUtils;
 import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.common.utils.UrlUtils;
 import org.apache.dubbo.registry.NotifyListener;
-import org.apache.dubbo.registry.RegistryNotifier;
-import org.apache.dubbo.registry.support.CacheableFailbackRegistry;
+import org.apache.dubbo.registry.support.FailbackRegistry;
 import org.apache.dubbo.remoting.Constants;
 import org.apache.dubbo.remoting.zookeeper.ChildListener;
 import org.apache.dubbo.remoting.zookeeper.StateListener;
@@ -42,21 +41,23 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
 import static org.apache.dubbo.common.constants.CommonConstants.ANY_VALUE;
+import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.INTERFACE_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PATH_SEPARATOR;
+import static org.apache.dubbo.common.constants.CommonConstants.PROTOCOL_SEPARATOR_ENCODED;
+import static org.apache.dubbo.common.constants.RegistryConstants.CATEGORY_KEY;
 import static org.apache.dubbo.common.constants.RegistryConstants.CONFIGURATORS_CATEGORY;
 import static org.apache.dubbo.common.constants.RegistryConstants.CONSUMERS_CATEGORY;
 import static org.apache.dubbo.common.constants.RegistryConstants.DEFAULT_CATEGORY;
 import static org.apache.dubbo.common.constants.RegistryConstants.DYNAMIC_KEY;
+import static org.apache.dubbo.common.constants.RegistryConstants.EMPTY_PROTOCOL;
 import static org.apache.dubbo.common.constants.RegistryConstants.PROVIDERS_CATEGORY;
 import static org.apache.dubbo.common.constants.RegistryConstants.ROUTERS_CATEGORY;
 
 /**
  * ZookeeperRegistry
  */
-public class ZookeeperRegistry extends CacheableFailbackRegistry {
-
-    private final static Logger logger = LoggerFactory.getLogger(ZookeeperRegistry.class);
+public class ZookeeperRegistry extends FailbackRegistry {
 
     private final static String DEFAULT_ROOT = "dubbo";
 
@@ -73,7 +74,7 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
         if (url.isAnyHost()) {
             throw new IllegalStateException("registry address == null");
         }
-        String group = url.getGroup(DEFAULT_ROOT);
+        String group = url.getParameter(GROUP_KEY, DEFAULT_ROOT);
         if (!group.startsWith(PATH_SEPARATOR)) {
             group = PATH_SEPARATOR + group;
         }
@@ -167,7 +168,7 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
                 List<URL> urls = new ArrayList<>();
                 for (String path : toCategoriesPath(url)) {
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
-                    ChildListener zkListener = listeners.computeIfAbsent(listener, k -> new RegistryChildListenerImpl(url, path, k, latch));
+                    ChildListener zkListener = listeners.computeIfAbsent(listener, k -> new RegistryChildListenerImpl(url, k, latch));
                     if (zkListener instanceof RegistryChildListenerImpl) {
                         ((RegistryChildListenerImpl) zkListener).setLatch(latch);
                     }
@@ -190,7 +191,7 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
     public void doUnsubscribe(URL url, NotifyListener listener) {
         ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
         if (listeners != null) {
-            ChildListener zkListener = listeners.remove(listener);
+            ChildListener zkListener = listeners.get(listener);
             if (zkListener != null) {
                 if (ANY_VALUE.equals(url.getServiceInterface())) {
                     String root = toRootPath();
@@ -200,10 +201,6 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
                         zkClient.removeChildListener(path, zkListener);
                     }
                 }
-            }
-
-            if(listeners.isEmpty()){
-                zkListeners.remove(url);
             }
         }
     }
@@ -248,10 +245,10 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
 
     private String[] toCategoriesPath(URL url) {
         String[] categories;
-        if (ANY_VALUE.equals(url.getCategory())) {
+        if (ANY_VALUE.equals(url.getParameter(CATEGORY_KEY))) {
             categories = new String[]{PROVIDERS_CATEGORY, CONSUMERS_CATEGORY, ROUTERS_CATEGORY, CONFIGURATORS_CATEGORY};
         } else {
-            categories = url.getCategory(new String[]{DEFAULT_CATEGORY});
+            categories = url.getParameter(CATEGORY_KEY, new String[]{DEFAULT_CATEGORY});
         }
         String[] paths = new String[categories.length];
         for (int i = 0; i < categories.length; i++) {
@@ -261,11 +258,40 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
     }
 
     private String toCategoryPath(URL url) {
-        return toServicePath(url) + PATH_SEPARATOR + url.getCategory(DEFAULT_CATEGORY);
+        return toServicePath(url) + PATH_SEPARATOR + url.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
     }
 
     private String toUrlPath(URL url) {
         return toCategoryPath(url) + PATH_SEPARATOR + URL.encode(url.toFullString());
+    }
+
+    private List<URL> toUrlsWithoutEmpty(URL consumer, List<String> providers) {
+        List<URL> urls = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(providers)) {
+            for (String provider : providers) {
+                if (provider.contains(PROTOCOL_SEPARATOR_ENCODED)) {
+                    URL url = URLStrParser.parseEncodedStr(provider);
+                    if (UrlUtils.isMatch(consumer, url)) {
+                        urls.add(url);
+                    }
+                }
+            }
+        }
+        return urls;
+    }
+
+    private List<URL> toUrlsWithEmpty(URL consumer, String path, List<String> providers) {
+        List<URL> urls = toUrlsWithoutEmpty(consumer, providers);
+        if (urls == null || urls.isEmpty()) {
+            int i = path.lastIndexOf(PATH_SEPARATOR);
+            String category = i < 0 ? path : path.substring(i + 1);
+            URL empty = URLBuilder.from(consumer)
+                    .setProtocol(EMPTY_PROTOCOL)
+                    .addParameter(CATEGORY_KEY, category)
+                    .build();
+            urls.add(empty);
+        }
+        return urls;
     }
 
     /**
@@ -282,53 +308,27 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
             for (Map.Entry<URL, Set<NotifyListener>> entry : recoverSubscribed.entrySet()) {
                 URL url = entry.getKey();
                 for (NotifyListener listener : entry.getValue()) {
-                    removeFailedSubscribed(url, listener);
                     addFailedSubscribed(url, listener);
                 }
             }
         }
     }
 
-    @Override
-    protected boolean isMatch(URL subscribeUrl, URL providerUrl) {
-        return UrlUtils.isMatch(subscribeUrl, providerUrl);
-    }
-
     private class RegistryChildListenerImpl implements ChildListener {
-        private RegistryNotifier notifier;
-        private long lastExecuteTime;
+
+        private URL url;
+
+        private NotifyListener listener;
+
         private volatile CountDownLatch latch;
 
-        public RegistryChildListenerImpl(URL consumerUrl, String path, NotifyListener listener, CountDownLatch latch) {
+        RegistryChildListenerImpl(URL url, NotifyListener listener, CountDownLatch latch) {
+            this.url = url;
+            this.listener = listener;
             this.latch = latch;
-            notifier = new RegistryNotifier(ZookeeperRegistry.this.getDelay()) {
-                @Override
-                public void notify(Object rawAddresses) {
-                    long delayTime = getDelayTime();
-                    if (delayTime <= 0) {
-                        this.doNotify(rawAddresses);
-                    } else {
-                        long interval = delayTime - (System.currentTimeMillis() - lastExecuteTime);
-                        if (interval > 0) {
-                            try {
-                                Thread.sleep(interval);
-                            } catch (InterruptedException e) {
-                                // ignore
-                            }
-                        }
-                        lastExecuteTime = System.currentTimeMillis();
-                        this.doNotify(rawAddresses);
-                    }
-                }
-
-                @Override
-                protected void doNotify(Object rawAddresses) {
-                    ZookeeperRegistry.this.notify(consumerUrl, listener, ZookeeperRegistry.this.toUrlsWithEmpty(consumerUrl, path, (List<String>) rawAddresses));
-                }
-            };
         }
 
-        public void setLatch(CountDownLatch latch) {
+        void setLatch(CountDownLatch latch) {
             this.latch = latch;
         }
 
@@ -339,7 +339,8 @@ public class ZookeeperRegistry extends CacheableFailbackRegistry {
             } catch (InterruptedException e) {
                 logger.warn("Zookeeper children listener thread was interrupted unexpectedly, may cause race condition with the main thread.");
             }
-            notifier.notify(children);
+            ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, path, children));
         }
     }
+
 }

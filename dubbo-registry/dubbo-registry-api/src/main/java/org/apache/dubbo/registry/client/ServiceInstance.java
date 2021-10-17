@@ -18,7 +18,6 @@ package org.apache.dubbo.registry.client;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.SortedMap;
 
 /**
  * The model class of an instance of a service, which is used for service registration and discovery.
@@ -27,6 +26,13 @@ import java.util.SortedMap;
  * @since 2.7.5
  */
 public interface ServiceInstance extends Serializable {
+
+    /**
+     * The id of the registered service instance.
+     *
+     * @return nullable
+     */
+    String getId();
 
     /**
      * The name of service that current instance belongs to.
@@ -47,7 +53,7 @@ public interface ServiceInstance extends Serializable {
      *
      * @return the positive integer if present
      */
-    int getPort();
+    Integer getPort();
 
     String getAddress();
 
@@ -77,12 +83,6 @@ public interface ServiceInstance extends Serializable {
      * @return non-null, mutable and unsorted {@link Map}
      */
     Map<String, String> getMetadata();
-
-    SortedMap<String, String> getSortedMetadata();
-
-    String getRegistryCluster();
-
-    void setRegistryCluster(String registryCluster);
 
     Map<String, String> getExtendParams();
 

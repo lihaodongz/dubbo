@@ -19,8 +19,6 @@ package org.apache.dubbo.rpc.protocol.dubbo;
 
 import org.apache.dubbo.common.Parameters;
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.remoting.ChannelHandler;
 import org.apache.dubbo.remoting.RemotingException;
 import org.apache.dubbo.remoting.exchange.ExchangeClient;
@@ -40,11 +38,9 @@ import static org.apache.dubbo.rpc.protocol.dubbo.Constants.LAZY_CONNECT_INITIAL
 @SuppressWarnings("deprecation")
 final class ReferenceCountExchangeClient implements ExchangeClient {
 
-    private final static Logger logger = LoggerFactory.getLogger(ReferenceCountExchangeClient.class);
     private final URL url;
     private final AtomicInteger referenceCount = new AtomicInteger(0);
-    private final AtomicInteger disconnectCount = new AtomicInteger(0);
-    private final Integer maxDisconnectCount = 50;
+
     private ExchangeClient client;
 
     public ReferenceCountExchangeClient(ExchangeClient client) {
@@ -185,12 +181,8 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
         // this is a defensive operation to avoid client is closed by accident, the initial state of the client is false
         URL lazyUrl = url.addParameter(LAZY_CONNECT_INITIAL_STATE_KEY, Boolean.TRUE)
                 //.addParameter(RECONNECT_KEY, Boolean.FALSE)
-                .addParameter(SEND_RECONNECT_KEY, Boolean.TRUE.toString());
-        //.addParameter(LazyConnectExchangeClient.REQUEST_WITH_WARNING_KEY, true);
-
-        if (disconnectCount.getAndIncrement() % maxDisconnectCount == 0) {
-            logger.warn(url.getAddress() + " " + url.getServiceKey() + " safe guard client , should not be called ,must have a bug.");
-        }
+                .addParameter(SEND_RECONNECT_KEY, Boolean.TRUE.toString())
+                .addParameter(LazyConnectExchangeClient.REQUEST_WITH_WARNING_KEY, true);
 
         /**
          * the order of judgment in the if statement cannot be changed.
@@ -212,7 +204,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
         referenceCount.incrementAndGet();
     }
 
-    public int getCount(){
+    public int getCount() {
         return referenceCount.get();
     }
 }

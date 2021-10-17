@@ -28,8 +28,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
-
 /**
  * {@link YamlPropertySourceFactory} Test
  *
@@ -39,7 +37,7 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
 @PropertySource(name = "yaml-source", value = {"classpath:/META-INF/dubbo.yml"}, factory = YamlPropertySourceFactory.class)
 @Configuration
 @ContextConfiguration(classes = YamlPropertySourceFactoryTest.class)
-@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class YamlPropertySourceFactoryTest {
 
     @Autowired

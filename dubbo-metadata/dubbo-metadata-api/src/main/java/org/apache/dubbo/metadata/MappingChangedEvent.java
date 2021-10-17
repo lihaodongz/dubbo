@@ -14,31 +14,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.dubbo.metadata;
 
+<<<<<<< HEAD:dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/router/mesh/route/MeshRuleRouterFactoryTest.java
+package org.apache.dubbo.rpc.cluster.router.mesh.route;
+
+import org.apache.dubbo.common.URL;
+import org.junit.jupiter.api.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+
+public class MeshRuleRouterFactoryTest {
+
+    @Test
+    public void getRouter() {
+        MeshRuleRouterFactory ruleRouterFactory = new MeshRuleRouterFactory();
+        URL url = mock(URL.class);
+        when(url.getServiceKey()).thenReturn("demoService");
+        ruleRouterFactory.getRouter(url);
+=======
 import java.util.Set;
 
 public class MappingChangedEvent {
-
-    private final String serviceKey;
-    private final Set<String> apps;
-
-    public MappingChangedEvent(String serviceKey, Set<String> apps) {
-        this.serviceKey = serviceKey;
-        this.apps = apps;
-    }
+    private String serviceKey;
+    private Set<String> apps;
 
     public String getServiceKey() {
         return serviceKey;
     }
 
-    public Set<String> getApps() {
-        return apps;
+    public void setServiceKey(String serviceKey) {
+        this.serviceKey = serviceKey;
     }
 
-    @Override
-    public String toString() {
-        return "{serviceKey: " + serviceKey + ", apps: " +
-                apps.toString() + "}";
+    public Set<String> getApps() {
+        return apps;
+>>>>>>> dubbo-2.7.10:dubbo-metadata/dubbo-metadata-api/src/main/java/org/apache/dubbo/metadata/MappingChangedEvent.java
     }
+
+    public void setApps(Set<String> apps) {
+        this.apps = apps;
+    }
+
 }

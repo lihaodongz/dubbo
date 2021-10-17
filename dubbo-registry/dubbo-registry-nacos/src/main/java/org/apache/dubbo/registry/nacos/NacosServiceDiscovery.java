@@ -23,7 +23,6 @@ import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.registry.client.AbstractServiceDiscovery;
 import org.apache.dubbo.registry.client.ServiceDiscovery;
 import org.apache.dubbo.registry.client.ServiceInstance;
-import org.apache.dubbo.registry.client.event.ServiceInstancesChangedEvent;
 import org.apache.dubbo.registry.client.event.listener.ServiceInstancesChangedListener;
 import org.apache.dubbo.registry.nacos.util.NacosNamingServiceUtils;
 
@@ -34,6 +33,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -59,34 +59,38 @@ public class NacosServiceDiscovery extends AbstractServiceDiscovery {
     private URL registryURL;
 
     @Override
-    public void doInitialize(URL registryURL) throws Exception {
+    public void initialize(URL registryURL) throws Exception {
         this.namingService = createNamingService(registryURL);
         this.group = getGroup(registryURL);
         this.registryURL = registryURL;
     }
 
     @Override
-    public void doDestroy() throws Exception {
-        this.namingService.shutdown();
+    public void destroy() {
+        this.namingService = null;
     }
 
     @Override
     public void doRegister(ServiceInstance serviceInstance) {
         execute(namingService, service -> {
             Instance instance = toInstance(serviceInstance);
+            appendPreservedParam(instance);
             service.registerInstance(instance.getServiceName(), group, instance);
         });
     }
 
     @Override
     public void doUpdate(ServiceInstance serviceInstance) {
-        ServiceInstance oldInstance = this.serviceInstance;
-        unregister(oldInstance);
-        register(serviceInstance);
+        if (this.serviceInstance == null) {
+            register(serviceInstance);
+        } else {
+            unregister(serviceInstance);
+            register(serviceInstance);
+        }
     }
 
     @Override
-    public void doUnregister(ServiceInstance serviceInstance) throws RuntimeException {
+    public void unregister(ServiceInstance serviceInstance) throws RuntimeException {
         execute(namingService, service -> {
             Instance instance = toInstance(serviceInstance);
             service.deregisterInstance(instance.getServiceName(), group, instance);
@@ -123,7 +127,7 @@ public class NacosServiceDiscovery extends AbstractServiceDiscovery {
                         }
                     });
                 } catch (NacosException e) {
-                    logger.error("add nacos service instances changed listener fail ", e);
+                    e.printStackTrace();
                 }
             });
         });
@@ -140,6 +144,11 @@ public class NacosServiceDiscovery extends AbstractServiceDiscovery {
                 .stream()
                 .map(NacosNamingServiceUtils::toServiceInstance)
                 .collect(Collectors.toList());
-        listener.onEvent(new ServiceInstancesChangedEvent(serviceName, serviceInstances));
+        dispatchServiceInstancesChangedEvent(serviceName, serviceInstances);
+    }
+
+    private void appendPreservedParam(Instance instance) {
+        Map<String, String> preservedParam = NacosNamingServiceUtils.getNacosPreservedParam(getUrl());
+        instance.getMetadata().putAll(preservedParam);
     }
 }

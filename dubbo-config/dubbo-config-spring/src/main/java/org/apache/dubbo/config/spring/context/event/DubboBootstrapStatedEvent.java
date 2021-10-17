@@ -16,9 +16,9 @@
  */
 package org.apache.dubbo.config.spring.context.event;
 
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
-
 import org.springframework.context.ApplicationEvent;
+
+import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 
 /**
  * A {@link org.springframework.context.ApplicationEvent} after {@link org.apache.dubbo.config.bootstrap.DubboBootstrap#start()} success

@@ -73,7 +73,7 @@ public class ProviderConfiguration {
     /**
      * Current protocol configuration, to replace XML config:
      * <prev>
-     * &lt;dubbo:protocol name="dubbo" port="12345"/&gt;
+     * &lt;dubbo:protocol name="injvm" port="-1"/&gt;
      * </prev>
      *
      * @return {@link ProtocolConfig} Bean
@@ -81,8 +81,8 @@ public class ProviderConfiguration {
     @Bean("dubbo")
     public ProtocolConfig protocolConfig() {
         ProtocolConfig protocolConfig = new ProtocolConfig();
-        protocolConfig.setName("dubbo");
-        protocolConfig.setPort(12345);
+        protocolConfig.setName("injvm");
+        protocolConfig.setPort(-1);
         return protocolConfig;
     }
 

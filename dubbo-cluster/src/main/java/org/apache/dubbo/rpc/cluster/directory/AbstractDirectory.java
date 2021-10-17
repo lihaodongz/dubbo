@@ -26,7 +26,6 @@ import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.cluster.Directory;
 import org.apache.dubbo.rpc.cluster.Router;
 import org.apache.dubbo.rpc.cluster.RouterChain;
-import org.apache.dubbo.rpc.cluster.support.ClusterUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,12 +36,10 @@ import static org.apache.dubbo.common.constants.CommonConstants.INTERFACE_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.MONITOR_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PATH_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PROTOCOL_KEY;
-import static org.apache.dubbo.rpc.cluster.Constants.CONSUMER_URL_KEY;
 import static org.apache.dubbo.rpc.cluster.Constants.REFER_KEY;
 
 /**
  * Abstract implementation of Directory: Invoker list returned from this Directory's list method have been filtered by Routers
- *
  */
 public abstract class AbstractDirectory<T> implements Directory<T> {
 
@@ -55,9 +52,10 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
 
     protected volatile URL consumerUrl;
 
-    protected RouterChain<T> routerChain;
+    protected final Map<String, String> queryMap; // Initialization at construction time, assertion not null
+    protected final String consumedProtocol;
 
-    protected final Map<String, String> queryMap;
+    protected RouterChain<T> routerChain;
 
     public AbstractDirectory(URL url) {
         this(url, null, false);
@@ -72,36 +70,18 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
             throw new IllegalArgumentException("url == null");
         }
 
-        this.url = url.removeAttribute(REFER_KEY).removeAttribute(MONITOR_KEY);
+        queryMap = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
+        String path = queryMap.get(PATH_KEY);
+        this.consumedProtocol = this.queryMap.get(PROTOCOL_KEY) == null ? DUBBO : this.queryMap.get(PROTOCOL_KEY);
+        this.url = url.removeParameter(REFER_KEY).removeParameter(MONITOR_KEY);
 
-        Map<String, String> queryMap;
-        Object referParams =  url.getAttribute(REFER_KEY);
-        if (referParams instanceof Map) {
-            queryMap = (Map<String, String>) referParams;
-            this.consumerUrl = (URL) url.getAttribute(CONSUMER_URL_KEY);
-        } else {
-            queryMap = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
+        URL consumerUrlFrom = this.url.setProtocol(consumedProtocol)
+                .setPath(path == null ? queryMap.get(INTERFACE_KEY) : path);
+        if (isUrlFromRegistry) {
+            // reserve parameters if url is already a consumer url
+            consumerUrlFrom = consumerUrlFrom.clearParameters();
         }
-
-        // remove some local only parameters
-        this.queryMap = ClusterUtils.mergeLocalParams(queryMap);
-
-        if (consumerUrl == null) {
-            String host = StringUtils.isNotEmpty(queryMap.get("register.ip")) ? queryMap.get("register.ip") : this.url.getHost();
-            String path = queryMap.get(PATH_KEY);
-            String consumedProtocol = queryMap.get(PROTOCOL_KEY) == null ? DUBBO : queryMap.get(PROTOCOL_KEY);
-
-            URL consumerUrlFrom = this.url
-                    .setHost(host)
-                    .setPort(0)
-                    .setProtocol(consumedProtocol)
-                    .setPath(path == null ? queryMap.get(INTERFACE_KEY) : path);
-            if (isUrlFromRegistry) {
-                // reserve parameters if url is already a consumer url
-                consumerUrlFrom = consumerUrlFrom.clearParameters();
-            }
-            this.consumerUrl = consumerUrlFrom.addParameters(queryMap).removeAttribute(MONITOR_KEY);
-        }
+        this.consumerUrl = consumerUrlFrom.addParameters(queryMap).removeParameter(MONITOR_KEY);
 
         setRouterChain(routerChain);
     }

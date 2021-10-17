@@ -15,23 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.dubbo.rpc.protocol.tri;
+package org.apache.dubbo.metadata.store.consul;
 
-import java.util.Map;
+import org.apache.dubbo.common.URL;
+import org.apache.dubbo.metadata.report.MetadataReport;
+import org.apache.dubbo.metadata.report.support.AbstractMetadataReportFactory;
 
-public interface Metadata extends Iterable<Map.Entry<CharSequence, CharSequence>> {
-
-    Metadata put(CharSequence key, CharSequence value);
-
-    default Metadata putIfNotNull(CharSequence key, CharSequence value) {
-        if (value != null) {
-            put(key, value);
-        }
-        return this;
+/**
+ * metadata report factory impl for consul
+ */
+public class ConsulMetadataReportFactory extends AbstractMetadataReportFactory {
+    @Override
+    protected MetadataReport createMetadataReport(URL url) {
+        return new ConsulMetadataReport(url);
     }
-
-    CharSequence get(CharSequence key);
-
-    boolean contains(CharSequence key);
-
 }

@@ -23,7 +23,6 @@ import javassist.NotFoundException;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
-import java.beans.MethodDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -45,7 +44,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -325,19 +323,19 @@ public final class ReflectUtils {
 
     public static String getSignature(String methodName, Class<?>[] parameterTypes) {
         StringBuilder sb = new StringBuilder(methodName);
-        sb.append('(');
+        sb.append("(");
         if (parameterTypes != null && parameterTypes.length > 0) {
             boolean first = true;
             for (Class<?> type : parameterTypes) {
                 if (first) {
                     first = false;
                 } else {
-                    sb.append(',');
+                    sb.append(",");
                 }
                 sb.append(type.getName());
             }
         }
-        sb.append(')');
+        sb.append(")");
         return sb.toString();
     }
 
@@ -600,7 +598,7 @@ public final class ReflectUtils {
             name = name.substring(0, index);
         }
         while (c-- > 0) {
-            sb.append('[');
+            sb.append("[");
         }
         if ("void".equals(name)) {
             sb.append(JVM_VOID);
@@ -732,7 +730,7 @@ public final class ReflectUtils {
         if (c > 0) {
             StringBuilder sb = new StringBuilder();
             while (c-- > 0) {
-                sb.append('[');
+                sb.append("[");
             }
 
             if ("void".equals(name)) {
@@ -1079,9 +1077,7 @@ public final class ReflectUtils {
                     Object property = getEmptyObject(field.getType(), emptyInstances, level + 1);
                     if (property != null) {
                         try {
-                            if (!field.isAccessible()) {
-                                field.setAccessible(true);
-                            }
+                            ReflectUtils.makeAccessible(field);
                             field.set(value, property);
                         } catch (Throwable ignored) {
                         }
@@ -1170,8 +1166,7 @@ public final class ReflectUtils {
                         || Modifier.isStatic(field.getModifiers())) {
                     continue;
                 }
-
-                field.setAccessible(true);
+                ReflectUtils.makeAccessible(field);
 
                 properties.put(field.getName(), field);
             }
@@ -1186,7 +1181,7 @@ public final class ReflectUtils {
             Method[] methods = cl.getDeclaredMethods();
             for (Method method : methods) {
                 if (isBeanPropertyReadMethod(method)) {
-                    method.setAccessible(true);
+                    ReflectUtils.makeAccessible(method);
                     String property = getPropertyNameFromBeanReadMethod(method);
                     properties.put(property, method);
                 }
@@ -1309,25 +1304,6 @@ public final class ReflectUtils {
     }
 
     /**
-     * Check target bean class whether has specify method
-     * @param beanClass
-     * @param methodName
-     * @return
-     */
-    public static boolean hasMethod(Class<?> beanClass, String methodName) {
-        try {
-            BeanInfo beanInfo = Introspector.getBeanInfo(beanClass);
-            Optional<MethodDescriptor> descriptor = Stream.of(beanInfo.getMethodDescriptors())
-                    .filter(methodDescriptor -> methodName.equals(methodDescriptor.getName()))
-                    .findFirst();
-            return descriptor.isPresent();
-        } catch (Exception e) {
-
-        }
-        return false;
-    }
-
-    /**
      * Resolve the types of the specified values
      *
      * @param values the values
@@ -1370,24 +1346,50 @@ public final class ReflectUtils {
     }
 
     /**
-     * Get all field names of target type
-     * @param type
-     * @return
+     * Copy from org.springframework.util.ReflectionUtils.
+     * Make the given field accessible, explicitly setting it accessible if
+     * necessary. The {@code setAccessible(true)} method is only called
+     * when actually necessary, to avoid unnecessary conflicts with a JVM
+     * SecurityManager (if active).
+     * @param field the field to make accessible
+     * @see java.lang.reflect.Field#setAccessible
      */
-    public static Set<String> getAllFieldNames(Class<?> type) {
-
-        Set<String> fieldNames = new HashSet<>();
-        for (Field field : type.getDeclaredFields()) {
-            fieldNames.add(field.getName());
+    @SuppressWarnings("deprecation")  // on JDK 9
+    public static void makeAccessible(Field field) {
+        if ((!Modifier.isPublic(field.getModifiers()) ||
+                !Modifier.isPublic(field.getDeclaringClass().getModifiers()) ||
+                Modifier.isFinal(field.getModifiers())) && !field.isAccessible()) {
+            field.setAccessible(true);
         }
-
-        Set<Class<?>> allSuperClasses = ClassUtils.getAllSuperClasses(type);
-        for (Class<?> aClass : allSuperClasses) {
-            for (Field field : aClass.getDeclaredFields()) {
-                fieldNames.add(field.getName());
-            }
-        }
-        return fieldNames;
     }
 
+    /**
+     * Copy from org.springframework.util.ReflectionUtils.
+     * Make the given constructor accessible, explicitly setting it accessible
+     * if necessary. The {@code setAccessible(true)} method is only called
+     * when actually necessary, to avoid unnecessary conflicts with a JVM
+     * SecurityManager (if active).
+     * @param ctor the constructor to make accessible
+     * @see java.lang.reflect.Constructor#setAccessible
+     */
+    @SuppressWarnings("deprecation")  // on JDK 9
+    public static void makeAccessible(Constructor<?> ctor) {
+        if ((!Modifier.isPublic(ctor.getModifiers()) ||
+                !Modifier.isPublic(ctor.getDeclaringClass().getModifiers())) && !ctor.isAccessible()) {
+            ctor.setAccessible(true);
+        }
+    }
+
+    public static boolean checkZeroArgConstructor(Class clazz) {
+        try {
+            clazz.getDeclaredConstructor();
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    public static boolean isJdk(Class clazz) {
+        return clazz.getName().startsWith("java.") || clazz.getName().startsWith("javax.");
+    }
 }

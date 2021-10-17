@@ -17,7 +17,6 @@
 package org.apache.dubbo.registry.client.migration;
 
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.config.ConfigurationUtils;
 import org.apache.dubbo.common.config.configcenter.ConfigChangedEvent;
 import org.apache.dubbo.common.config.configcenter.ConfigurationListener;
 import org.apache.dubbo.common.config.configcenter.DynamicConfiguration;
@@ -25,201 +24,89 @@ import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.CollectionUtils;
-import org.apache.dubbo.common.utils.NamedThreadFactory;
+import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.common.utils.StringUtils;
-import org.apache.dubbo.registry.client.migration.model.MigrationRule;
 import org.apache.dubbo.registry.integration.RegistryProtocol;
 import org.apache.dubbo.registry.integration.RegistryProtocolListener;
 import org.apache.dubbo.rpc.Exporter;
 import org.apache.dubbo.rpc.cluster.ClusterInvoker;
+import org.apache.dubbo.rpc.cluster.support.migration.MigrationRule;
 import org.apache.dubbo.rpc.model.ApplicationModel;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.apache.dubbo.common.constants.RegistryConstants.INIT;
 
 @Activate
 public class MigrationRuleListener implements RegistryProtocolListener, ConfigurationListener {
     private static final Logger logger = LoggerFactory.getLogger(MigrationRuleListener.class);
-    private static final String DUBBO_SERVICEDISCOVERY_MIGRATION = "DUBBO_SERVICEDISCOVERY_MIGRATION";
-    private static final String MIGRATION_DELAY_KEY = "dubbo.application.migration.delay";
-    private final String RULE_KEY = ApplicationModel.getName() + ".migration";
 
-    private final Map<MigrationInvoker, MigrationRuleHandler> handlers = new ConcurrentHashMap<>();
-    private final LinkedBlockingQueue<String> ruleQueue = new LinkedBlockingQueue<>();
-
-    private final AtomicBoolean executorSubmit = new AtomicBoolean(false);
-    private final ExecutorService ruleManageExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("Dubbo-Migration-Listener"));
-
+    private Set<MigrationRuleHandler> listeners = new ConcurrentHashSet<>();
     private DynamicConfiguration configuration;
 
     private volatile String rawRule;
-    private volatile MigrationRule rule;
 
     public MigrationRuleListener() {
-        this.configuration = ApplicationModel.getEnvironment().getDynamicConfiguration().orElse(null);
+        Optional<DynamicConfiguration> optional =  ApplicationModel.getEnvironment().getDynamicConfiguration();
 
-        if (this.configuration != null) {
-            logger.info("Listening for migration rules on dataId " + RULE_KEY + ", group " + DUBBO_SERVICEDISCOVERY_MIGRATION);
-            configuration.addListener(RULE_KEY, DUBBO_SERVICEDISCOVERY_MIGRATION, this);
+        if (optional.isPresent()) {
+            this.configuration = optional.get();
 
-            String rawRule = configuration.getConfig(RULE_KEY, DUBBO_SERVICEDISCOVERY_MIGRATION);
+            logger.info("Listening for migration rules on dataId-" + MigrationRule.RULE_KEY + " group-" + MigrationRule.DUBBO_SERVICEDISCOVERY_MIGRATION_GROUP);
+            configuration.addListener(MigrationRule.RULE_KEY, MigrationRule.DUBBO_SERVICEDISCOVERY_MIGRATION_GROUP, this);
+
+            rawRule = configuration.getConfig(MigrationRule.RULE_KEY, MigrationRule.DUBBO_SERVICEDISCOVERY_MIGRATION_GROUP);
             if (StringUtils.isEmpty(rawRule)) {
                 rawRule = INIT;
             }
-            setRawRule(rawRule);
+
         } else {
             if (logger.isWarnEnabled()) {
-                logger.warn("Using default configuration rule because config center is not configured!");
+                logger.warn("config center is not configured!");
             }
-            setRawRule(INIT);
+
+            rawRule = INIT;
         }
 
-        String localRawRule = ApplicationModel.getEnvironment().getLocalMigrationRule();
-        if (!StringUtils.isEmpty(localRawRule)) {
-            Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboMigrationRuleDelayWorker", true))
-                .schedule(() -> {
-                    if (this.rawRule.equals(INIT)) {
-                        this.process(new ConfigChangedEvent(null, null, localRawRule));
-                    }
-                }, getDelay(), TimeUnit.MILLISECONDS);
-        }
-    }
-
-    private int getDelay() {
-        int delay = 60000;
-        String delayStr = ConfigurationUtils.getProperty(MIGRATION_DELAY_KEY);
-        if (StringUtils.isEmpty(delayStr)) {
-            return delay;
-        }
-
-        try {
-            delay = Integer.parseInt(delayStr);
-        } catch (Exception e) {
-            logger.warn("Invalid migration delay param " + delayStr);
-        }
-        return delay;
+        process(new ConfigChangedEvent(MigrationRule.RULE_KEY, MigrationRule.DUBBO_SERVICEDISCOVERY_MIGRATION_GROUP, rawRule));
     }
 
     @Override
     public synchronized void process(ConfigChangedEvent event) {
-        String rawRule = event.getContent();
+        rawRule = event.getContent();
         if (StringUtils.isEmpty(rawRule)) {
-            // fail back to startup status
-            rawRule = INIT;
-            //logger.warn("Received empty migration rule, will ignore.");
-        }
-        try {
-            ruleQueue.put(rawRule);
-        } catch (InterruptedException e) {
-            logger.error("Put rawRule to rule management queue failed. rawRule: " + rawRule, e);
+            logger.warn("Received empty migration rule, will ignore.");
+            return;
         }
 
-        if (executorSubmit.compareAndSet(false, true)) {
-            ruleManageExecutor.submit(() -> {
-                while (true) {
-                    String rule = "";
-                    try {
-                        rule = ruleQueue.take();
-                        if (StringUtils.isEmpty(rule)) {
-                            Thread.sleep(1000);
-                        }
-                    } catch (InterruptedException e) {
-                        logger.error("Poll Rule from config center failed.", e);
-                    }
-                    if (StringUtils.isEmpty(rule)) {
-                        continue;
-                    }
-                    if (Objects.equals(this.rawRule, rule)) {
-                        logger.info("Ignore duplicated rule");
-                        continue;
-                    }
-                    try {
-                        logger.info("Using the following migration rule to migrate:");
-                        logger.info(rule);
+        logger.info("Using the following migration rule to migrate:");
+        logger.info(rawRule);
 
-                        setRawRule(rule);
-
-                        if (CollectionUtils.isNotEmptyMap(handlers)) {
-                            ExecutorService executorService = Executors.newFixedThreadPool(100, new NamedThreadFactory("Dubbo-Invoker-Migrate"));
-                            CountDownLatch countDownLatch = new CountDownLatch(handlers.size());
-
-                            handlers.forEach((_key, handler) ->
-                                executorService.submit(() -> {
-                                    handler.doMigrate(this.rule);
-                                    countDownLatch.countDown();
-                                }));
-
-                            try {
-                                countDownLatch.await(1, TimeUnit.HOURS);
-                            } catch (InterruptedException e) {
-                                logger.error("Wait Invoker Migrate interrupted!", e);
-                            }
-                            executorService.shutdown();
-                        }
-                    } catch (Throwable t) {
-                        logger.error("Error occurred when migration.", t);
-                    }
-                }
-            });
+        if (CollectionUtils.isNotEmpty(listeners)) {
+            listeners.forEach(listener -> listener.doMigrate(rawRule));
         }
-
-    }
-
-    public void setRawRule(String rawRule) {
-        this.rawRule = rawRule;
-        this.rule = parseRule(this.rawRule);
-    }
-
-    private MigrationRule parseRule(String rawRule) {
-        MigrationRule tmpRule = rule == null ? MigrationRule.INIT : rule;
-        if (INIT.equals(rawRule)) {
-            tmpRule = MigrationRule.INIT;
-        } else {
-            try {
-                tmpRule = MigrationRule.parse(rawRule);
-            } catch (Exception e) {
-                logger.error("Failed to parse migration rule...", e);
-            }
-        }
-        return tmpRule;
     }
 
     @Override
-    public void onExport(RegistryProtocol registryProtocol, Exporter<?> exporter) {
+    public synchronized void onExport(RegistryProtocol registryProtocol, Exporter<?> exporter) {
 
     }
 
     @Override
-    public void onRefer(RegistryProtocol registryProtocol, ClusterInvoker<?> invoker, URL consumerUrl, URL registryURL) {
-        MigrationRuleHandler<?> migrationRuleHandler = handlers.computeIfAbsent((MigrationInvoker<?>) invoker, _key -> {
-            ((MigrationInvoker<?>) invoker).setMigrationRuleListener(this);
-            return new MigrationRuleHandler<>((MigrationInvoker<?>) invoker, consumerUrl);
-        });
+    public synchronized  void onRefer(RegistryProtocol registryProtocol, ClusterInvoker<?> invoker, URL url) {
+        MigrationInvoker<?> migrationInvoker = (MigrationInvoker<?>) invoker;
 
-        migrationRuleHandler.doMigrate(rule);
+        MigrationRuleHandler<?> migrationListener = new MigrationRuleHandler<>(migrationInvoker);
+        listeners.add(migrationListener);
+
+        migrationListener.doMigrate(rawRule);
     }
 
     @Override
     public void onDestroy() {
-        if (configuration != null) {
-            configuration.removeListener(RULE_KEY, this);
+        if (null != configuration) {
+            configuration.removeListener(MigrationRule.RULE_KEY, this);
         }
-    }
-
-    public Map<MigrationInvoker, MigrationRuleHandler> getHandlers() {
-        return handlers;
-    }
-
-    protected void removeMigrationInvoker(MigrationInvoker<?> migrationInvoker) {
-        handlers.remove(migrationInvoker);
     }
 }

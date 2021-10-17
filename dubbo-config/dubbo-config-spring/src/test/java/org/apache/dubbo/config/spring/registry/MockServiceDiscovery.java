@@ -24,28 +24,32 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MockServiceDiscovery extends AbstractServiceDiscovery {
+
     private URL registryURL;
 
     @Override
-    public void doInitialize(URL registryURL) throws Exception {
+    public void initialize(URL registryURL) throws Exception {
         this.registryURL = registryURL;
     }
 
     @Override
-    public void doDestroy() throws Exception {
+    public void destroy() throws Exception {
 
     }
 
     @Override
-    public void doRegister(ServiceInstance serviceInstance) throws RuntimeException {
+    public void doRegister(ServiceInstance serviceInstance) {
+
     }
 
     @Override
-    public void doUpdate(ServiceInstance serviceInstance) throws RuntimeException {
+    public void doUpdate(ServiceInstance serviceInstance) {
+
     }
 
     @Override
-    public void doUnregister(ServiceInstance serviceInstance) throws RuntimeException {
+    public void unregister(ServiceInstance serviceInstance) throws RuntimeException {
+        this.serviceInstance = null;
     }
 
     @Override

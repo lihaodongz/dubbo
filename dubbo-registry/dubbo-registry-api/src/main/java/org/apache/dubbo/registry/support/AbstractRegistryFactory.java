@@ -38,7 +38,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import static org.apache.dubbo.common.constants.CommonConstants.INTERFACE_KEY;
-import static org.apache.dubbo.common.constants.CommonConstants.TIMESTAMP_KEY;
 import static org.apache.dubbo.rpc.cluster.Constants.EXPORT_KEY;
 import static org.apache.dubbo.rpc.cluster.Constants.REFER_KEY;
 
@@ -110,14 +109,6 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         }
     }
 
-    /**
-     * Reset state of AbstractRegistryFactory
-     */
-    public static void reset() {
-        destroyed.set(false);
-        REGISTRIES.clear();
-    }
-
     private Registry getDefaultNopRegistryIfDestroyed() {
         if (destroyed.get()) {
             LOGGER.warn("All registry instances have been destroyed, failed to fetch any instance. " +
@@ -138,7 +129,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         url = URLBuilder.from(url)
                 .setPath(RegistryService.class.getName())
                 .addParameter(INTERFACE_KEY, RegistryService.class.getName())
-                .removeParameters(EXPORT_KEY, REFER_KEY, TIMESTAMP_KEY)
+                .removeParameters(EXPORT_KEY, REFER_KEY)
                 .build();
         String key = createRegistryCacheKey(url);
         // Lock the registry access process to ensure a single instance of the registry

@@ -60,7 +60,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static org.apache.dubbo.common.constants.CommonConstants.HIDE_KEY_PREFIX;
+import static org.apache.dubbo.common.constants.CommonConstants.HIDDEN_KEY_PREFIX;
 
 /**
  * AbstractBeanDefinitionParser
@@ -411,7 +411,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 String value = resolveAttribute(element, "value", parserContext);
                 boolean hide = "true".equals(resolveAttribute(element, "hide", parserContext));
                 if (hide) {
-                    key = HIDE_KEY_PREFIX + key;
+                    key = HIDDEN_KEY_PREFIX + key;
                 }
                 parameters.put(key, new TypedStringValue(value, String.class));
             }

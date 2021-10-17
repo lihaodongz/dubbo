@@ -27,8 +27,6 @@ import java.util.regex.Pattern;
 public interface CommonConstants {
     String DUBBO = "dubbo";
 
-    String TRIPLE= "tri";
-
     String PROVIDER = "provider";
 
     String CONSUMER = "consumer";
@@ -44,10 +42,6 @@ public interface CommonConstants {
     String DUBBO_PROPERTIES_KEY = "dubbo.properties.file";
 
     String DEFAULT_DUBBO_PROPERTIES = "dubbo.properties";
-
-    String DUBBO_MIGRATION_KEY = "dubbo.migration.file";
-
-    String DEFAULT_DUBBO_MIGRATION_FILE = "dubbo-migration.yaml";
 
     String ANY_VALUE = "*";
 
@@ -79,6 +73,8 @@ public interface CommonConstants {
     Pattern SEMICOLON_SPLIT_PATTERN = Pattern.compile("\\s*[;]+\\s*");
 
     Pattern EQUAL_SPLIT_PATTERN = Pattern.compile("\\s*[=]+\\s*");
+
+    Pattern COLON_SPLIT_PATTERN = Pattern.compile("\\s*[:]+\\s*");
 
     String DEFAULT_PROXY = "javassist";
 
@@ -128,8 +124,6 @@ public interface CommonConstants {
     // works as a replacement of TIMEOUT_KEY on wire, which seems to be totally useless in previous releases).
     String TIMEOUT_ATTACHMENT_KEY = "_TO";
 
-    String TIMEOUT_ATTACHMENT_KEY_LOWER = "_to";
-
     String TIME_COUNTDOWN_KEY = "timeout-countdown";
 
     String ENABLE_TIMEOUT_COUNTDOWN_KEY = "enable-timeout-countdown";
@@ -144,7 +138,7 @@ public interface CommonConstants {
 
     String GROUP_CHAR_SEPARATOR = ":";
 
-    String HIDE_KEY_PREFIX = ".";
+    String HIDDEN_KEY_PREFIX = ".";
 
     String DOT_REGEX = "\\.";
 
@@ -189,8 +183,6 @@ public interface CommonConstants {
 
     String FILE_KEY = "file";
 
-    String FILTER_KEY = "filter";
-
     String DUMP_DIRECTORY = "dump.directory";
 
     String CLASSIFIER_KEY = "classifier";
@@ -201,6 +193,8 @@ public interface CommonConstants {
 
     String METADATA_KEY = "metadata-type";
 
+    String MAPPING_KEY = "mapping-type";
+
     String CONFIG_MAPPING_TYPE = "config";
 
     String METADATA_MAPPING_TYPE = "metadata";
@@ -208,8 +202,6 @@ public interface CommonConstants {
     String DEFAULT_METADATA_STORAGE_TYPE = "local";
 
     String REMOTE_METADATA_STORAGE_TYPE = "remote";
-
-    String GENERIC_KEY = "generic";
 
     /**
      * The composite metadata storage type includes {@link #DEFAULT_METADATA_STORAGE_TYPE "local"} and
@@ -232,15 +224,9 @@ public interface CommonConstants {
     String GENERIC_PARAMETER_DESC = "Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/Object;";
 
     /**
-     * echo call
-     */
-    String $ECHO = "$echo";
-    /**
      * package version in the manifest
      */
     String RELEASE_KEY = "release";
-
-    String PROTOBUF_MESSAGE_CLASS_NAME = "com.google.protobuf.Message";
 
     int MAX_PROXY_COUNT = 65535;
 
@@ -251,11 +237,6 @@ public interface CommonConstants {
     String HOST_KEY = "host";
     String PORT_KEY = "port";
     String DUBBO_IP_TO_BIND = "DUBBO_IP_TO_BIND";
-
-    /**
-     * broadcast cluster.
-     */
-    String BROADCAST_CLUSTER = "broadcast";
 
     /**
      * The property name for {@link NetworkInterface#getDisplayName() the name of network interface} that
@@ -285,8 +266,6 @@ public interface CommonConstants {
     String READONLY_EVENT = "R";
 
     String REFERENCE_FILTER_KEY = "reference.filter";
-
-    String INVOCATION_INTERCEPTOR_KEY = "invocation.interceptor";
 
     String INVOKER_LISTENER_KEY = "invoker.listener";
 
@@ -320,8 +299,6 @@ public interface CommonConstants {
 
     String GENERIC_SERIALIZATION_NATIVE_JAVA = "nativejava";
 
-    String GENERIC_SERIALIZATION_GSON = "gson";
-
     String GENERIC_SERIALIZATION_DEFAULT = "true";
 
     String GENERIC_SERIALIZATION_BEAN = "bean";
@@ -331,12 +308,6 @@ public interface CommonConstants {
     String GENERIC_SERIALIZATION_PROTOBUF = "protobuf-json";
 
     String GENERIC_WITH_CLZ_KEY = "generic.include.class";
-
-    /**
-     * Whether to cache locally, default is true
-     */
-    String REGISTRY_LOCAL_FILE_CACHE_ENABLED = "file.cache";
-
 
     /**
      * The limit of callback service instances for one interface on every client
@@ -388,6 +359,19 @@ public interface CommonConstants {
      */
     String DEFAULT_SERVICE_NAME_MAPPING_PROPERTIES_PATH = "META-INF/dubbo/service-name-mapping.properties";
 
+    String REDIS_CLIENT_KEY = "redis-client";
+
+    String MONO_REDIS = "mono";
+
+    String SENTINEL_REDIS = "sentinel";
+
+    String CLUSTER_REDIS = "cluster";
+
+    /** Pseudo URL prefix for loading from the class path: "classpath:". */
+    String CLASSPATH_URL_PREFIX = "classpath:";
+
+    String DEFAULT_VERSION = "0.0.0";
+
     String CLASS_DESERIALIZE_BLOCK_ALL = "dubbo.security.serialize.blockAllClassExceptAllow";
 
     String CLASS_DESERIALIZE_ALLOWED_LIST = "dubbo.security.serialize.allowedClassList";
@@ -398,52 +382,12 @@ public interface CommonConstants {
 
     String SERIALIZE_BLOCKED_LIST_FILE_PATH = "security/serialize.blockedlist";
 
-    String QOS_LIVE_PROBE_EXTENSION = "dubbo.application.liveness-probe";
-
-    String QOS_READY_PROBE_EXTENSION = "dubbo.application.readiness-probe";
-
-    String QOS_STARTUP_PROBE_EXTENSION = "dubbo.application.startup-probe";
-
-    String REGISTRY_DELAY_NOTIFICATION_KEY = "delay-notification";
-
-    String CACHE_CLEAR_TASK_INTERVAL = "dubbo.application.url.cache.task.interval";
-    String CACHE_CLEAR_WAITING_THRESHOLD = "dubbo.application.url.cache.clear.waiting";
-
-    String CLUSTER_INTERCEPTOR_COMPATIBLE_KEY = "dubbo.application.cluster.interceptor.compatible";
-
-    String UTF8ENCODE = "UTF-8";
-
-    /** Pseudo URL prefix for loading from the class path: "classpath:". */
-    String CLASSPATH_URL_PREFIX = "classpath:";
-
-    String DEFAULT_VERSION = "0.0.0";
-
-    String EXPORT_ASYNC_KEY = "export-async";
-
-    String REFER_ASYNC_KEY = "refer-async";
-
-    String EXPORT_BACKGROUND_KEY = "export-background";
-
-    String REFER_BACKGROUND_KEY = "refer-background";
-
-    String EXPORT_THREAD_NUM_KEY = "export-thread-num";
-
-    String REFER_THREAD_NUM_KEY = "refer-thread-num";
-
-    int DEFAULT_EXPORT_THREAD_NUM = 10;
-
-    int DEFAULT_REFER_THREAD_NUM = 10;
 
     /**
-     * Url merge processor key
+     *  Interface configuration item
+     * @since 2.7.10
      */
-    String URL_MERGE_PROCESSOR_KEY = "url-merge-processor";
+    String ON_CONNECT_KEY = "onconnect";
 
-    /**
-     * use native image to compile dubbo's identifier
-     */
-    String NATIVE = "native";
-  
-    String SERVICE_NAME_MAPPING_KEY = "service-name-mapping";
-
+    String ON_DISCONNECT_KEY = "ondisconnect";
 }

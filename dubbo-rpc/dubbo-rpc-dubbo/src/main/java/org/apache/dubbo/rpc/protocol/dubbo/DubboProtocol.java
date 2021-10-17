@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
@@ -99,10 +100,9 @@ public class DubboProtocol extends AbstractProtocol {
 
     /**
      * <host:port,Exchanger>
-     * {@link Map<String, List<ReferenceCountExchangeClient>}
      */
-    private final Map<String, Object> referenceClientMap = new ConcurrentHashMap<>();
-    private static final Object PENDING_OBJECT = new Object();
+    private final Map<String, List<ReferenceCountExchangeClient>> referenceClientMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Object> locks = new ConcurrentHashMap<>();
     private final Set<String> optimizers = new ConcurrentHashSet<>();
 
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
@@ -141,7 +141,7 @@ public class DubboProtocol extends AbstractProtocol {
                     return null;
                 }
             }
-            RpcContext.getServiceContext().setRemoteAddress(channel.getRemoteAddress());
+            RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
             Result result = invoker.invoke(inv);
             return result.thenApply(Function.identity());
         }
@@ -197,9 +197,9 @@ public class DubboProtocol extends AbstractProtocol {
 
             RpcInvocation invocation = new RpcInvocation(method, url.getParameter(INTERFACE_KEY), "", new Class<?>[0], new Object[0]);
             invocation.setAttachment(PATH_KEY, url.getPath());
-            invocation.setAttachment(GROUP_KEY, url.getGroup());
+            invocation.setAttachment(GROUP_KEY, url.getParameter(GROUP_KEY));
             invocation.setAttachment(INTERFACE_KEY, url.getParameter(INTERFACE_KEY));
-            invocation.setAttachment(VERSION_KEY, url.getVersion());
+            invocation.setAttachment(VERSION_KEY, url.getParameter(VERSION_KEY));
             if (url.getParameter(STUB_EVENT_KEY, false)) {
                 invocation.setAttachment(STUB_EVENT_KEY, Boolean.TRUE.toString());
             }
@@ -319,8 +319,6 @@ public class DubboProtocol extends AbstractProtocol {
                     server = serverMap.get(key);
                     if (server == null) {
                         serverMap.put(key, createServer(url));
-                    }else {
-                        server.reset(url);
                     }
                 }
             } else {
@@ -398,11 +396,6 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     @Override
-    public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
-        return protocolBindingRefer(type, url);
-    }
-
-    @Override
     public <T> Invoker<T> protocolBindingRefer(Class<T> serviceType, URL url) throws RpcException {
         optimizeSerialization(url);
 
@@ -452,76 +445,55 @@ public class DubboProtocol extends AbstractProtocol {
      * @param url
      * @param connectNum connectNum must be greater than or equal to 1
      */
-    @SuppressWarnings("unchecked")
     private List<ReferenceCountExchangeClient> getSharedClient(URL url, int connectNum) {
         String key = url.getAddress();
+        List<ReferenceCountExchangeClient> clients = referenceClientMap.get(key);
 
-        Object clients = referenceClientMap.get(key);
-        if (clients instanceof List) {
-            List<ReferenceCountExchangeClient> typedClients = (List<ReferenceCountExchangeClient>) clients;
-            if (checkClientCanUse(typedClients)) {
-                batchClientRefIncr(typedClients);
-                return typedClients;
-            }
+        if (checkClientCanUse(clients)) {
+            batchClientRefIncr(clients);
+            return clients;
         }
 
-        List<ReferenceCountExchangeClient> typedClients = null;
-
-        synchronized (referenceClientMap) {
-            for (; ; ) {
-                clients = referenceClientMap.get(key);
-
-                if (clients instanceof List) {
-                    typedClients = (List<ReferenceCountExchangeClient>) clients;
-                    if (checkClientCanUse(typedClients)) {
-                        batchClientRefIncr(typedClients);
-                        return typedClients;
-                    } else {
-                        referenceClientMap.put(key, PENDING_OBJECT);
-                        break;
-                    }
-                } else if (clients == PENDING_OBJECT) {
-                    try {
-                        referenceClientMap.wait();
-                    } catch (InterruptedException ignored) {
-                    }
-                } else {
-                    referenceClientMap.put(key, PENDING_OBJECT);
-                    break;
-                }
+        locks.putIfAbsent(key, new Object());
+        synchronized (locks.get(key)) {
+            clients = referenceClientMap.get(key);
+            // double check
+            if (checkClientCanUse(clients)) {
+                batchClientRefIncr(clients);
+                return clients;
             }
-        }
 
-        try {
             // connectNum must be greater than or equal to 1
             connectNum = Math.max(connectNum, 1);
 
             // If the clients is empty, then the first initialization is
-            if (CollectionUtils.isEmpty(typedClients)) {
-                typedClients = buildReferenceCountExchangeClientList(url, connectNum);
+            if (CollectionUtils.isEmpty(clients)) {
+                clients = buildReferenceCountExchangeClientList(url, connectNum);
+                referenceClientMap.put(key, clients);
+
             } else {
-                for (int i = 0; i < typedClients.size(); i++) {
-                    ReferenceCountExchangeClient referenceCountExchangeClient = typedClients.get(i);
+                for (int i = 0; i < clients.size(); i++) {
+                    ReferenceCountExchangeClient referenceCountExchangeClient = clients.get(i);
                     // If there is a client in the list that is no longer available, create a new one to replace him.
                     if (referenceCountExchangeClient == null || referenceCountExchangeClient.isClosed()) {
-                        typedClients.set(i, buildReferenceCountExchangeClient(url));
+                        clients.set(i, buildReferenceCountExchangeClient(url));
                         continue;
                     }
+
                     referenceCountExchangeClient.incrementAndGetCount();
                 }
             }
-        } finally {
-            synchronized (referenceClientMap) {
-                if (typedClients == null) {
-                    referenceClientMap.remove(key);
-                } else {
-                    referenceClientMap.put(key, typedClients);
-                }
-                referenceClientMap.notifyAll();
-            }
-        }
-        return typedClients;
 
+            /*
+             * I understand that the purpose of the remove operation here is to avoid the expired url key
+             * always occupying this memory space.
+             * But "locks.remove(key);" can lead to "synchronized (locks.get(key)) {" NPE, considering that the key of locks is "IP + port",
+             * it will not lead to the expansion of "locks" in theory, so I will annotate it here.
+             */
+//            locks.remove(key);
+
+            return clients;
+        }
     }
 
     /**
@@ -629,7 +601,6 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void destroy() {
         for (String key : new ArrayList<>(serverMap.keySet())) {
             ProtocolServer protocolServer = serverMap.remove(key);
@@ -653,17 +624,14 @@ public class DubboProtocol extends AbstractProtocol {
         }
 
         for (String key : new ArrayList<>(referenceClientMap.keySet())) {
-            Object clients = referenceClientMap.remove(key);
-            if (clients instanceof List) {
-                List<ReferenceCountExchangeClient> typedClients = (List<ReferenceCountExchangeClient>) clients;
+            List<ReferenceCountExchangeClient> clients = referenceClientMap.remove(key);
 
-                if (CollectionUtils.isEmpty(typedClients)) {
-                    continue;
-                }
+            if (CollectionUtils.isEmpty(clients)) {
+                continue;
+            }
 
-                for (ReferenceCountExchangeClient client : typedClients) {
-                    closeReferenceCountExchangeClient(client);
-                }
+            for (ReferenceCountExchangeClient client : clients) {
+                closeReferenceCountExchangeClient(client);
             }
         }
 

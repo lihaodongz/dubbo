@@ -17,9 +17,7 @@
 package org.apache.dubbo.common.utils;
 
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.URLStrParser;
 import org.apache.dubbo.common.constants.RemotingConstants;
-import org.apache.dubbo.common.url.component.ServiceConfigURL;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +31,6 @@ import static java.util.Collections.emptyMap;
 import static org.apache.dubbo.common.constants.CommonConstants.ANY_VALUE;
 import static org.apache.dubbo.common.constants.CommonConstants.CLASSIFIER_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SPLIT_PATTERN;
-import static org.apache.dubbo.common.constants.CommonConstants.DEFAULT_KEY_PREFIX;
 import static org.apache.dubbo.common.constants.CommonConstants.DUBBO_PROTOCOL;
 import static org.apache.dubbo.common.constants.CommonConstants.ENABLED_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
@@ -69,7 +66,7 @@ public class UrlUtils {
 
     public static URL parseURL(String address, Map<String, String> defaults) {
         if (address == null || address.length() == 0) {
-            throw new IllegalArgumentException("Address is not allowed to be empty, please re-enter.");
+            return null;
         }
         String url;
         if (address.contains("://") || address.contains(URL_PARAM_STARTING_SYMBOL)) {
@@ -105,7 +102,7 @@ public class UrlUtils {
             defaultParameters.remove(PORT_KEY);
             defaultParameters.remove(PATH_KEY);
         }
-        URL u = URL.cacheableValueOf(url);
+        URL u = URL.valueOf(url);
         boolean changed = false;
         String protocol = u.getProtocol();
         String username = u.getUsername();
@@ -159,18 +156,18 @@ public class UrlUtils {
             }
         }
         if (changed) {
-            u = new ServiceConfigURL(protocol, username, password, host, port, path, parameters);
+            u = new URL(protocol, username, password, host, port, path, parameters);
         }
         return u;
     }
 
     public static List<URL> parseURLs(String address, Map<String, String> defaults) {
         if (address == null || address.length() == 0) {
-            throw new IllegalArgumentException("Address is not allowed to be empty, please re-enter.");
+            return null;
         }
         String[] addresses = REGISTRY_SPLIT_PATTERN.split(address);
         if (addresses == null || addresses.length == 0) {
-            throw new IllegalArgumentException("Addresses is not allowed to be empty, please re-enter."); //here won't be empty
+            return null; //here won't be empty
         }
         List<URL> registries = new ArrayList<URL>();
         for (String addr : addresses) {
@@ -391,8 +388,8 @@ public class UrlUtils {
             return false;
         }
 
-        if (!isMatchCategory(providerUrl.getCategory(DEFAULT_CATEGORY),
-                consumerUrl.getCategory(DEFAULT_CATEGORY))) {
+        if (!isMatchCategory(providerUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY),
+                consumerUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY))) {
             return false;
         }
         if (!providerUrl.getParameter(ENABLED_KEY, true)
@@ -400,12 +397,12 @@ public class UrlUtils {
             return false;
         }
 
-        String consumerGroup = consumerUrl.getGroup();
-        String consumerVersion = consumerUrl.getVersion();
+        String consumerGroup = consumerUrl.getParameter(GROUP_KEY);
+        String consumerVersion = consumerUrl.getParameter(VERSION_KEY);
         String consumerClassifier = consumerUrl.getParameter(CLASSIFIER_KEY, ANY_VALUE);
 
-        String providerGroup = providerUrl.getGroup();
-        String providerVersion = providerUrl.getVersion();
+        String providerGroup = providerUrl.getParameter(GROUP_KEY);
+        String providerVersion = providerUrl.getParameter(VERSION_KEY);
         String providerClassifier = providerUrl.getParameter(CLASSIFIER_KEY, ANY_VALUE);
         return (ANY_VALUE.equals(consumerGroup) || StringUtils.isEquals(consumerGroup, providerGroup) || StringUtils.isContains(consumerGroup, providerGroup))
                 && (ANY_VALUE.equals(consumerVersion) || StringUtils.isEquals(consumerVersion, providerVersion))
@@ -454,10 +451,10 @@ public class UrlUtils {
     public static boolean isServiceKeyMatch(URL pattern, URL value) {
         return pattern.getParameter(INTERFACE_KEY).equals(
                 value.getParameter(INTERFACE_KEY))
-                && isItemMatch(pattern.getGroup(),
-                value.getGroup())
-                && isItemMatch(pattern.getVersion(),
-                value.getVersion());
+                && isItemMatch(pattern.getParameter(GROUP_KEY),
+                value.getParameter(GROUP_KEY))
+                && isItemMatch(pattern.getParameter(VERSION_KEY),
+                value.getParameter(VERSION_KEY));
     }
 
     public static List<URL> classifyUrls(List<URL> urls, Predicate<URL> predicate) {
@@ -466,24 +463,22 @@ public class UrlUtils {
 
     public static boolean isConfigurator(URL url) {
         return OVERRIDE_PROTOCOL.equals(url.getProtocol()) ||
-                CONFIGURATORS_CATEGORY.equals(url.getCategory(DEFAULT_CATEGORY));
+                CONFIGURATORS_CATEGORY.equals(url.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY));
     }
 
     public static boolean isRoute(URL url) {
         return ROUTE_PROTOCOL.equals(url.getProtocol()) ||
-                ROUTERS_CATEGORY.equals(url.getCategory(DEFAULT_CATEGORY));
+                ROUTERS_CATEGORY.equals(url.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY));
     }
 
     public static boolean isProvider(URL url) {
         return !OVERRIDE_PROTOCOL.equals(url.getProtocol()) &&
                 !ROUTE_PROTOCOL.equals(url.getProtocol()) &&
-                PROVIDERS_CATEGORY.equals(url.getCategory(PROVIDERS_CATEGORY));
+                PROVIDERS_CATEGORY.equals(url.getParameter(CATEGORY_KEY, PROVIDERS_CATEGORY));
     }
 
     public static boolean isRegistry(URL url) {
-        return REGISTRY_PROTOCOL.equals(url.getProtocol())
-                || SERVICE_REGISTRY_PROTOCOL.equalsIgnoreCase(url.getProtocol())
-                || (url.getProtocol() != null && url.getProtocol().endsWith("-registry-protocol"));
+        return REGISTRY_PROTOCOL.equals(url.getProtocol()) || SERVICE_REGISTRY_PROTOCOL.equalsIgnoreCase(url.getProtocol());
     }
 
     /**
@@ -493,16 +488,8 @@ public class UrlUtils {
      * @return If it is, return <code>true</code>, or <code>false</code>
      * @since 2.7.5
      */
-    public static boolean hasServiceDiscoveryRegistryTypeKey(URL url) {
-        return hasServiceDiscoveryRegistryTypeKey(url == null ? emptyMap() : url.getParameters());
-    }
-
-    public static boolean hasServiceDiscoveryRegistryProtocol(URL url) {
-        return SERVICE_REGISTRY_PROTOCOL.equalsIgnoreCase(url.getProtocol());
-    }
-
-    public static boolean isServiceDiscoveryURL(URL url) {
-        return hasServiceDiscoveryRegistryProtocol(url) || hasServiceDiscoveryRegistryTypeKey(url);
+    public static boolean isServiceDiscoveryRegistryType(URL url) {
+        return isServiceDiscoveryRegistryType(url == null ? emptyMap() : url.getParameters());
     }
 
     /**
@@ -512,7 +499,7 @@ public class UrlUtils {
      * @return If it is, return <code>true</code>, or <code>false</code>
      * @since 2.7.5
      */
-    public static boolean hasServiceDiscoveryRegistryTypeKey(Map<String, String> parameters) {
+    public static boolean isServiceDiscoveryRegistryType(Map<String, String> parameters) {
         if (parameters == null || parameters.isEmpty()) {
             return false;
         }
@@ -554,105 +541,4 @@ public class UrlUtils {
         arr[1] = serviceKey;
         return arr;
     }
-
-    /**
-     * NOTICE: This method allocate too much objects, we can use {@link URLStrParser#parseDecodedStr(String)} instead.
-     * <p>
-     * Parse url string
-     *
-     * @param url URL string
-     * @return URL instance
-     * @see URL
-     */
-    public static URL valueOf(String url) {
-        if (url == null || (url = url.trim()).length() == 0) {
-            throw new IllegalArgumentException("url == null");
-        }
-        String protocol = null;
-        String username = null;
-        String password = null;
-        String host = null;
-        int port = 0;
-        String path = null;
-        Map<String, String> parameters = null;
-        int i = url.indexOf('?'); // separator between body and parameters
-        if (i >= 0) {
-            String[] parts = url.substring(i + 1).split("&");
-            parameters = new HashMap<>();
-            for (String part : parts) {
-                part = part.trim();
-                if (part.length() > 0) {
-                    int j = part.indexOf('=');
-                    if (j >= 0) {
-                        String key = part.substring(0, j);
-                        String value = part.substring(j + 1);
-                        parameters.put(key, value);
-                        // compatible with lower versions registering "default." keys
-                        if (key.startsWith(DEFAULT_KEY_PREFIX)) {
-                            parameters.putIfAbsent(key.substring(DEFAULT_KEY_PREFIX.length()), value);
-                        }
-                    } else {
-                        parameters.put(part, part);
-                    }
-                }
-            }
-            url = url.substring(0, i);
-        }
-        i = url.indexOf("://");
-        if (i >= 0) {
-            if (i == 0) {
-                throw new IllegalStateException("url missing protocol: \"" + url + "\"");
-            }
-            protocol = url.substring(0, i);
-            url = url.substring(i + 3);
-        } else {
-            // case: file:/path/to/file.txt
-            i = url.indexOf(":/");
-            if (i >= 0) {
-                if (i == 0) {
-                    throw new IllegalStateException("url missing protocol: \"" + url + "\"");
-                }
-                protocol = url.substring(0, i);
-                url = url.substring(i + 1);
-            }
-        }
-
-        i = url.indexOf('/');
-        if (i >= 0) {
-            path = url.substring(i + 1);
-            url = url.substring(0, i);
-        }
-        i = url.lastIndexOf('@');
-        if (i >= 0) {
-            username = url.substring(0, i);
-            int j = username.indexOf(':');
-            if (j >= 0) {
-                password = username.substring(j + 1);
-                username = username.substring(0, j);
-            }
-            url = url.substring(i + 1);
-        }
-        i = url.lastIndexOf(':');
-        if (i >= 0 && i < url.length() - 1) {
-            if (url.lastIndexOf('%') > i) {
-                // ipv6 address with scope id
-                // e.g. fe80:0:0:0:894:aeec:f37d:23e1%en0
-                // see https://howdoesinternetwork.com/2013/ipv6-zone-id
-                // ignore
-            } else {
-                port = Integer.parseInt(url.substring(i + 1));
-                url = url.substring(0, i);
-            }
-        }
-        if (url.length() > 0) {
-            host = url;
-        }
-
-        return new ServiceConfigURL(protocol, username, password, host, port, path, parameters);
-    }
-
-    public static boolean isConsumer(URL url) {
-        return url.getProtocol().equalsIgnoreCase("consumer") || url.getPort() == 0;
-    }
-
 }

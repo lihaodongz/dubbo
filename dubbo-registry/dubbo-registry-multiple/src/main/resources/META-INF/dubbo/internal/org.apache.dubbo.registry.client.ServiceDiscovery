@@ -1,1 +1,1 @@
-multiple=org.apache.dubbo.registry.multiple.MultipleServiceDiscovery
+multiple=org.apache.dubbo.registry.multiple.MultipleRegistryServiceDiscovery

@@ -18,23 +18,11 @@ package org.apache.dubbo.metadata;
 
 import org.apache.dubbo.common.URL;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.apache.dubbo.metadata.RevisionResolver.EMPTY_REVISION;
-
 public class MetadataInfoTest {
-
     @Test
-    public void testEmptyRevision() {
-        MetadataInfo metadataInfo = new MetadataInfo("demo");
-        metadataInfo.setApp("demo");
-
-        Assertions.assertEquals(EMPTY_REVISION, metadataInfo.calAndGetRevision());
-    }
-
-    @Test
-    public void testRevisionNotChange() {
+    public void revisionTest() {
         MetadataInfo metadataInfo = new MetadataInfo("demo");
         metadataInfo.setApp("demo");
 
@@ -44,29 +32,5 @@ public class MetadataInfoTest {
 
         System.out.println(serviceInfo.toDescString());
         System.out.println(metadataInfo.calAndGetRevision());
-    }
-
-    @Test
-    public void testParamsFiltered() {
-        MetadataInfo metadataInfo = new MetadataInfo("demo");
-        metadataInfo.setApp("demo");
-
-
-    }
-
-    @Test
-    public void testParamsStatusChangeAsExpected() {
-        MetadataInfo metadataInfo = new MetadataInfo("demo");
-        metadataInfo.setApp("demo");
-
-
-    }
-
-    @Test
-    public void testEquals() {
-        MetadataInfo metadataInfo = new MetadataInfo("demo");
-        metadataInfo.setApp("demo");
-
-
     }
 }

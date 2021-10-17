@@ -19,8 +19,9 @@ package org.apache.dubbo.spring.boot.autoconfigure;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.apache.dubbo.config.spring.beans.factory.annotation.ReferenceAnnotationBeanPostProcessor;
-import org.apache.dubbo.config.spring.beans.factory.annotation.ServiceAnnotationPostProcessor;
+import org.apache.dubbo.config.spring.beans.factory.annotation.ServiceClassPostProcessor;
 import org.apache.dubbo.config.spring.context.DubboBootstrapApplicationListener;
+import org.apache.dubbo.config.spring.context.DubboLifecycleComponentApplicationListener;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubboConfig;
 
 import org.springframework.beans.BeansException;
@@ -50,7 +51,7 @@ import static org.apache.dubbo.spring.boot.util.DubboUtils.DUBBO_SCAN_PREFIX;
  *
  * @see DubboReference
  * @see DubboService
- * @see ServiceAnnotationPostProcessor
+ * @see ServiceClassPostProcessor
  * @see ReferenceAnnotationBeanPostProcessor
  * @since 2.7.0
  */
@@ -62,27 +63,28 @@ import static org.apache.dubbo.spring.boot.util.DubboUtils.DUBBO_SCAN_PREFIX;
 public class DubboAutoConfiguration implements ApplicationContextAware, BeanDefinitionRegistryPostProcessor {
 
     /**
-     * Creates {@link ServiceAnnotationPostProcessor} Bean
+     * Creates {@link ServiceClassPostProcessor} Bean
      *
      * @param packagesToScan the packages to scan
-     * @return {@link ServiceAnnotationPostProcessor}
+     * @return {@link ServiceClassPostProcessor}
      */
     @ConditionalOnProperty(prefix = DUBBO_SCAN_PREFIX, name = BASE_PACKAGES_PROPERTY_NAME)
     @ConditionalOnBean(name = BASE_PACKAGES_BEAN_NAME)
     @Bean
-    public ServiceAnnotationPostProcessor serviceAnnotationBeanProcessor(@Qualifier(BASE_PACKAGES_BEAN_NAME)
+    public ServiceClassPostProcessor serviceClassPostProcessor(@Qualifier(BASE_PACKAGES_BEAN_NAME)
                                                                        Set<String> packagesToScan) {
-        return new ServiceAnnotationPostProcessor(packagesToScan);
+        return new ServiceClassPostProcessor(packagesToScan);
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         if (applicationContext instanceof ConfigurableApplicationContext) {
             ConfigurableApplicationContext context = (ConfigurableApplicationContext) applicationContext;
+            DubboLifecycleComponentApplicationListener dubboLifecycleComponentApplicationListener
+                    = new DubboLifecycleComponentApplicationListener(applicationContext);
+            context.addApplicationListener(dubboLifecycleComponentApplicationListener);
 
-            // Why register ApplicationListener here?
-            DubboBootstrapApplicationListener dubboBootstrapApplicationListener = new DubboBootstrapApplicationListener();
-            dubboBootstrapApplicationListener.setApplicationContext(applicationContext);
+            DubboBootstrapApplicationListener dubboBootstrapApplicationListener = new DubboBootstrapApplicationListener(applicationContext);
             context.addApplicationListener(dubboBootstrapApplicationListener);
         }
     }
@@ -91,6 +93,7 @@ public class DubboAutoConfiguration implements ApplicationContextAware, BeanDefi
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         // Remove the BeanDefinitions of ApplicationListener from DubboBeanUtils#registerCommonBeans(BeanDefinitionRegistry)
         // TODO Refactoring in Dubbo 2.7.9
+        removeBeanDefinition(registry, DubboLifecycleComponentApplicationListener.BEAN_NAME);
         removeBeanDefinition(registry, DubboBootstrapApplicationListener.BEAN_NAME);
     }
 

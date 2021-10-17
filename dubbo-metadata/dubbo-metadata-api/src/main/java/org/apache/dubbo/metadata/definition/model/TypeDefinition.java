@@ -33,35 +33,15 @@ import static org.apache.dubbo.common.utils.StringUtils.replace;
  */
 public class TypeDefinition implements Serializable {
 
-    /**
-     * the name of type
-     *
-     * @see Class#getCanonicalName()
-     * @see org.apache.dubbo.metadata.definition.util.ClassUtils#getCanonicalNameForParameterizedType(ParameterizedType) 
-     */
+    private String id;
     private String type;
-
-    /**
-     * the items(generic parameter) of Map/List(ParameterizedType)
-     * <p>
-     * if this type is not ParameterizedType, the items is null or empty
-     */
     @SerializedName("items")
-    private List<String> items;
-
-    /**
-     * the enum's value
-     * <p>
-     * If this type is not enum, enums is null or empty
-     */
+    private List<TypeDefinition> items;
     @SerializedName("enum")
     private List<String> enums;
-
-    /**
-     * the key is property name,
-     * the value is property's type name
-     */
-    private Map<String, String> properties;
+    private String $ref;
+    private Map<String, TypeDefinition> properties;
+    private String typeBuilderName;
 
     public TypeDefinition() {
     }
@@ -115,21 +95,29 @@ public class TypeDefinition implements Serializable {
         return type.contains("<") && type.contains(">");
     }
 
+    public String get$ref() {
+        return $ref;
+    }
+
     public List<String> getEnums() {
         if (enums == null) {
-            enums = new ArrayList<>();
+            enums = new ArrayList<String>();
         }
         return enums;
     }
 
-    public List<String> getItems() {
+    public String getId() {
+        return id;
+    }
+
+    public List<TypeDefinition> getItems() {
         if (items == null) {
             items = new ArrayList<>();
         }
         return items;
     }
 
-    public Map<String, String> getProperties() {
+    public Map<String, TypeDefinition> getProperties() {
         if (properties == null) {
             properties = new HashMap<>();
         }
@@ -140,15 +128,27 @@ public class TypeDefinition implements Serializable {
         return type;
     }
 
+    public String getTypeBuilderName() {
+        return typeBuilderName;
+    }
+
+    public void set$ref(String $ref) {
+        this.$ref = $ref;
+    }
+
     public void setEnums(List<String> enums) {
         this.enums = enums;
     }
 
-    public void setItems(List<String> items) {
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setItems(List<TypeDefinition> items) {
         this.items = items;
     }
 
-    public void setProperties(Map<String, String> properties) {
+    public void setProperties(Map<String, TypeDefinition> properties) {
         this.properties = properties;
     }
 
@@ -156,9 +156,13 @@ public class TypeDefinition implements Serializable {
         this.type = formatType(type);
     }
 
+    public void setTypeBuilderName(String typeBuilderName) {
+        this.typeBuilderName = typeBuilderName;
+    }
+
     @Override
     public String toString() {
-        return "TypeDefinition [type=" + type + ", properties=" + properties + "]";
+        return "TypeDefinition [id=" + id + ", type=" + type + ", properties=" + properties + ", $ref=" + $ref + "]";
     }
 
     @Override
@@ -170,14 +174,16 @@ public class TypeDefinition implements Serializable {
             return false;
         }
         TypeDefinition that = (TypeDefinition) o;
-        return Objects.equals(getType(), that.getType()) &&
+        return Objects.equals(getId(), that.getId()) &&
+                Objects.equals(getType(), that.getType()) &&
                 Objects.equals(getItems(), that.getItems()) &&
                 Objects.equals(getEnums(), that.getEnums()) &&
+                Objects.equals(get$ref(), that.get$ref()) &&
                 Objects.equals(getProperties(), that.getProperties());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getType(), getItems(), getEnums(), getProperties());
+        return Objects.hash(getId(), getType(), getItems(), getEnums(), get$ref(), getProperties());
     }
 }

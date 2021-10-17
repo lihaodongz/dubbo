@@ -16,18 +16,19 @@
  */
 package org.apache.dubbo.config.spring.beans.factory.annotation;
 
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.config.spring.ServiceBean;
 import org.apache.dubbo.config.spring.api.HelloService;
-import org.apache.dubbo.config.spring.context.annotation.DubboComponentScan;
-import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
+import org.apache.dubbo.rpc.model.ApplicationModel;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -35,39 +36,42 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Map;
 
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD;
-
 /**
- * {@link ServiceAnnotationPostProcessor} Test
+ * {@link ServiceAnnotationBeanPostProcessor} Test
  *
- * @since 2.7.7
+ * @since 2.5.8
  */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(
         classes = {
                 ServiceAnnotationTestConfiguration.class,
-                ServiceAnnotationPostProcessorTest.class,
-                ServiceAnnotationPostProcessorTest.DuplicatedScanConfig.class
+                ServiceAnnotationBeanPostProcessorTest.class
         })
-@DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 @TestPropertySource(properties = {
         "provider.package = org.apache.dubbo.config.spring.context.annotation.provider",
+        "packagesToScan = ${provider.package}",
 })
-@EnableDubbo(scanBasePackages = "${provider.package}")
-public class ServiceAnnotationPostProcessorTest {
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+public class ServiceAnnotationBeanPostProcessorTest {
 
-    @BeforeAll
-    public static void setUp() {
-        DubboBootstrap.reset();
+    @BeforeEach
+    public void setUp() {
+        ApplicationModel.reset();
     }
 
     @AfterEach
     public void tearDown() {
-        DubboBootstrap.reset();
+        ApplicationModel.reset();
     }
 
     @Autowired
     private ConfigurableListableBeanFactory beanFactory;
+
+    @Bean
+    public ServiceAnnotationBeanPostProcessor serviceAnnotationBeanPostProcessor2
+            (@Value("${packagesToScan}") String... packagesToScan) {
+        return new ServiceAnnotationBeanPostProcessor(packagesToScan);
+    }
 
     @Test
     public void test() {
@@ -78,12 +82,15 @@ public class ServiceAnnotationPostProcessorTest {
 
         Map<String, ServiceBean> serviceBeansMap = beanFactory.getBeansOfType(ServiceBean.class);
 
-        Assertions.assertEquals(3, serviceBeansMap.size());
+        Assertions.assertEquals(2, serviceBeansMap.size());
 
-        Map<String, ServiceAnnotationPostProcessor> beanPostProcessorsMap =
-                beanFactory.getBeansOfType(ServiceAnnotationPostProcessor.class);
+        Map<String, ServiceAnnotationBeanPostProcessor> beanPostProcessorsMap =
+                beanFactory.getBeansOfType(ServiceAnnotationBeanPostProcessor.class);
 
         Assertions.assertEquals(2, beanPostProcessorsMap.size());
+
+        Assertions.assertTrue(beanPostProcessorsMap.containsKey("serviceAnnotationBeanPostProcessor"));
+        Assertions.assertTrue(beanPostProcessorsMap.containsKey("serviceAnnotationBeanPostProcessor2"));
 
     }
 
@@ -92,16 +99,11 @@ public class ServiceAnnotationPostProcessorTest {
 
         Map<String, ServiceBean> serviceBeansMap = beanFactory.getBeansOfType(ServiceBean.class);
 
-        Assertions.assertEquals(3, serviceBeansMap.size());
+        Assertions.assertEquals(2, serviceBeansMap.size());
 
         ServiceBean demoServiceBean = serviceBeansMap.get("ServiceBean:org.apache.dubbo.config.spring.api.DemoService:2.5.7");
 
         Assertions.assertNotNull(demoServiceBean.getMethods());
-
-    }
-
-    @DubboComponentScan({"org.apache.dubbo.config.spring.context.annotation", "${provider.package}"})
-    static class DuplicatedScanConfig {
 
     }
 

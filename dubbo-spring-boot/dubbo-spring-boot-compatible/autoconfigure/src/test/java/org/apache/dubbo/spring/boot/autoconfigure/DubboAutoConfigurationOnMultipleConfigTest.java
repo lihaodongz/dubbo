@@ -23,12 +23,11 @@ import org.apache.dubbo.config.MonitorConfig;
 import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.ProviderConfig;
 import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +49,6 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
  *
  * @since 2.7.0
  */
-@Ignore
 @RunWith(SpringRunner.class)
 @TestPropertySource(
         properties = {
@@ -131,12 +129,12 @@ public class DubboAutoConfigurationOnMultipleConfigTest {
 
     @Before
     public void init() {
-        DubboBootstrap.reset();
+        ApplicationModel.reset();
     }
 
     @After
     public void destroy() {
-        DubboBootstrap.reset();
+        ApplicationModel.reset();
     }
 
     @Autowired

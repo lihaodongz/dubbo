@@ -16,11 +16,6 @@
  */
 package org.apache.dubbo.common;
 
-import org.apache.dubbo.common.logger.Logger;
-import org.apache.dubbo.common.logger.LoggerFactory;
-import org.apache.dubbo.common.url.component.ServiceConfigURL;
-import org.apache.dubbo.common.url.component.URLItemCache;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,11 +26,7 @@ import static org.apache.dubbo.common.utils.StringUtils.decodeHexByte;
 import static org.apache.dubbo.common.utils.Utf8Utils.decodeUtf8;
 
 public final class URLStrParser {
-    private static final Logger logger = LoggerFactory.getLogger(URLStrParser.class);
-    public static final String ENCODED_QUESTION_MARK = "%3F";
-    public static final String ENCODED_TIMESTAMP_KEY = "timestamp%3D";
-    public static final String ENCODED_PID_KEY = "pid%3D";
-    public static final String ENCODED_AND_MARK = "%26";
+
     private static final char SPACE = 0x20;
 
     private static final ThreadLocal<TempBuf> DECODE_TEMP_BUF = ThreadLocal.withInitial(() -> new TempBuf(1024));
@@ -44,16 +35,12 @@ public final class URLStrParser {
         //empty
     }
 
-    public static URL parseDecodedStr(String decodedURLStr) {
-        return parseDecodedStr(decodedURLStr, false);
-    }
-
     /**
      * @param decodedURLStr : after {@link URL#decode} string
      *                      decodedURLStr format: protocol://username:password@host:port/path?k1=v1&k2=v2
      *                      [protocol://][username:password@][host:port]/[path][?k1=v1&k2=v2]
      */
-    public static URL parseDecodedStr(String decodedURLStr, boolean modifiable) {
+    public static URL parseDecodedStr(String decodedURLStr) {
         Map<String, String> parameters = null;
         int pathEndIdx = decodedURLStr.indexOf('?');
         if (pathEndIdx >= 0) {
@@ -63,7 +50,7 @@ public final class URLStrParser {
         }
 
         String decodedBody = decodedURLStr.substring(0, pathEndIdx);
-        return parseURLBody(decodedURLStr, decodedBody, parameters, modifiable);
+        return parseURLBody(decodedURLStr, decodedBody, parameters);
     }
 
     private static Map<String, String> parseDecodedParams(String str, int from) {
@@ -106,14 +93,8 @@ public final class URLStrParser {
      * @param parameters  :
      * @return URL
      */
-    private static URL parseURLBody(String fullURLStr, String decodedBody, Map<String, String> parameters, boolean modifiable) {
+    private static URL parseURLBody(String fullURLStr, String decodedBody, Map<String, String> parameters) {
         int starIdx = 0, endIdx = decodedBody.length();
-        // ignore the url content following '#'
-        int poundIndex = decodedBody.indexOf('#');
-        if (poundIndex != -1) {
-            endIdx = poundIndex;
-        }
-
         String protocol = null;
         int protoEndIdx = decodedBody.indexOf("://");
         if (protoEndIdx >= 0) {
@@ -137,7 +118,7 @@ public final class URLStrParser {
         String path = null;
         int pathStartIdx = indexOf(decodedBody, '/', starIdx, endIdx);
         if (pathStartIdx >= 0) {
-            path = decodedBody.substring(pathStartIdx + 1, endIdx);
+            path = decodedBody.substring(pathStartIdx + 1);
             endIdx = pathStartIdx;
         }
 
@@ -145,13 +126,9 @@ public final class URLStrParser {
         String password = null;
         int pwdEndIdx = lastIndexOf(decodedBody, '@', starIdx, endIdx);
         if (pwdEndIdx > 0) {
-            int passwordStartIdx = indexOf(decodedBody, ':', starIdx, pwdEndIdx);
-            if (passwordStartIdx != -1) {//tolerate incomplete user pwd input, like '1234@'
-                username = decodedBody.substring(starIdx, passwordStartIdx);
-                password = decodedBody.substring(passwordStartIdx + 1, pwdEndIdx);
-            } else {
-                username = decodedBody.substring(starIdx, pwdEndIdx);
-            }
+            int userNameEndIdx = indexOf(decodedBody, ':', starIdx, pwdEndIdx);
+            username = decodedBody.substring(starIdx, userNameEndIdx);
+            password = decodedBody.substring(userNameEndIdx + 1, pwdEndIdx);
             starIdx = pwdEndIdx + 1;
         }
 
@@ -173,44 +150,7 @@ public final class URLStrParser {
         if (endIdx > starIdx) {
             host = decodedBody.substring(starIdx, endIdx);
         }
-
-        // check cache
-        protocol = URLItemCache.intern(protocol);
-        path = URLItemCache.checkPath(path);
-
-        return new ServiceConfigURL(protocol, username, password, host, port, path, parameters);
-    }
-
-    public static URL parseEncodedStr(String encodedURLStr) {
-        return parseEncodedStr(encodedURLStr, false);
-    }
-
-    public static String[] parseRawURLToArrays(String rawURLStr, int pathEndIdx) {
-        String[] parts = new String[2];
-        int paramStartIdx = pathEndIdx + 3;//skip ENCODED_QUESTION_MARK
-        if (pathEndIdx == -1) {
-            pathEndIdx = rawURLStr.indexOf('?');
-            if (pathEndIdx == -1) {
-                // url with no params, decode anyway
-                rawURLStr = URL.decode(rawURLStr);
-            } else {
-                paramStartIdx = pathEndIdx + 1;
-            }
-        }
-        if (pathEndIdx >= 0) {
-            parts[0] = rawURLStr.substring(0, pathEndIdx);
-            parts[1] = rawURLStr.substring(paramStartIdx);
-        } else {
-            parts = new String[]{rawURLStr};
-        }
-        return parts;
-    }
-
-    public static Map<String, String> parseParams(String rawParams, boolean encoded) {
-        if (encoded) {
-            return parseEncodedParams(rawParams, 0);
-        }
-        return parseDecodedParams(rawParams, 0);
+        return new URL(protocol, username, password, host, port, path, parameters);
     }
 
     /**
@@ -218,7 +158,7 @@ public final class URLStrParser {
      *                      encodedURLStr after decode format: protocol://username:password@host:port/path?k1=v1&k2=v2
      *                      [protocol://][username:password@][host:port]/[path][?k1=v1&k2=v2]
      */
-    public static URL parseEncodedStr(String encodedURLStr, boolean modifiable) {
+    public static URL parseEncodedStr(String encodedURLStr) {
         Map<String, String> parameters = null;
         int pathEndIdx = encodedURLStr.toUpperCase().indexOf("%3F");// '?'
         if (pathEndIdx >= 0) {
@@ -229,7 +169,7 @@ public final class URLStrParser {
 
         //decodedBody format: [protocol://][username:password@][host:port]/[path]
         String decodedBody = decodeComponent(encodedURLStr, 0, pathEndIdx, false, DECODE_TEMP_BUF.get());
-        return parseURLBody(encodedURLStr, decodedBody, parameters, modifiable);
+        return parseURLBody(encodedURLStr, decodedBody, parameters);
     }
 
     private static Map<String, String> parseEncodedParams(String str, int from) {
@@ -286,26 +226,26 @@ public final class URLStrParser {
 
         if (isEncoded) {
             String name = decodeComponent(str, nameStart, valueStart - 3, false, tempBuf);
-            String value;
+            String value = decodeComponent(str, valueStart, valueEnd, false, tempBuf);
             if (valueStart == valueEnd) {
                 value = name;
             } else {
                 value = decodeComponent(str, valueStart, valueEnd, false, tempBuf);
             }
-            URLItemCache.putParams(params,name, value);
+            params.put(name, value);
             // compatible with lower versions registering "default." keys
             if (name.startsWith(DEFAULT_KEY_PREFIX)) {
                 params.putIfAbsent(name.substring(DEFAULT_KEY_PREFIX.length()), value);
             }
         } else {
             String name = str.substring(nameStart, valueStart - 1);
-            String value;
+            String value = str.substring(valueStart, valueEnd);
             if (valueStart == valueEnd) {
                 value = name;
             } else {
                 value = str.substring(valueStart, valueEnd);
             }
-            URLItemCache.putParams(params, name, value);
+            params.put(name, value);
             // compatible with lower versions registering "default." keys
             if (name.startsWith(DEFAULT_KEY_PREFIX)) {
                 params.putIfAbsent(name.substring(DEFAULT_KEY_PREFIX.length()), value);

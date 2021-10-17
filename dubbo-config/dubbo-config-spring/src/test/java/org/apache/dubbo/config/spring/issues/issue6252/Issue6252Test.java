@@ -14,18 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.dubbo.config.spring.issues.issue6252;
+package org.apache.dubbo.config.spring.issues;
 
-import org.apache.dubbo.config.annotation.DubboReference;
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
-import org.apache.dubbo.config.spring.ZooKeeperServer;
-import org.apache.dubbo.config.spring.api.DemoService;
+import org.apache.dubbo.config.spring.ReferenceBean;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubboConfig;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.test.annotation.DirtiesContext;
 
 /**
  * The test-case for https://github.com/apache/dubbo/issues/6252
@@ -34,27 +33,20 @@ import org.springframework.context.annotation.PropertySource;
  */
 @Configuration
 @EnableDubboConfig
-@PropertySource("classpath:/META-INF/issues/issue6252/config.properties")
+@PropertySource("classpath:/META-INF/issue-6252-test.properties")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class Issue6252Test {
 
-    @BeforeAll
-    public static void setUp() {
-        DubboBootstrap.reset();
+    @Bean
+    public static ReferenceBean referenceBean() {
+        return new ReferenceBean();
     }
-
-    @DubboReference
-    private DemoService demoService;
 
     @Test
     public void test() throws Exception {
-        ZooKeeperServer.start();
-
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Issue6252Test.class);
-        try {
-            DemoService demoService = context.getBean(DemoService.class);
-        } finally {
-            context.close();
-        }
+        context.getBean(ReferenceBean.class);
+        context.close();
     }
 
 }

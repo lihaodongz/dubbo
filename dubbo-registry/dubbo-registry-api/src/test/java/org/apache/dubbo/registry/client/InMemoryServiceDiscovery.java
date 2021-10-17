@@ -19,7 +19,7 @@ package org.apache.dubbo.registry.client;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.utils.DefaultPage;
 import org.apache.dubbo.common.utils.Page;
-import org.apache.dubbo.registry.client.event.ServiceInstancesChangedEvent;
+import org.apache.dubbo.event.EventDispatcher;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +37,8 @@ import static java.util.Collections.emptyList;
  * @since 2.7.5
  */
 public class InMemoryServiceDiscovery extends AbstractServiceDiscovery {
+
+    private final EventDispatcher dispatcher = EventDispatcher.getDefaultExtension();
 
     private Map<String, List<ServiceInstance>> repository = new HashMap<>();
 
@@ -78,7 +80,7 @@ public class InMemoryServiceDiscovery extends AbstractServiceDiscovery {
     }
 
     @Override
-    public void doRegister(ServiceInstance serviceInstance) throws RuntimeException {
+    public void doRegister(ServiceInstance serviceInstance) {
         String serviceName = serviceInstance.getServiceName();
         List<ServiceInstance> serviceInstances = repository.computeIfAbsent(serviceName, s -> new LinkedList<>());
         if (!serviceInstances.contains(serviceInstance)) {
@@ -87,24 +89,24 @@ public class InMemoryServiceDiscovery extends AbstractServiceDiscovery {
     }
 
     @Override
-    public void doUpdate(ServiceInstance serviceInstance) throws RuntimeException {
+    public void doUpdate(ServiceInstance serviceInstance) {
         unregister(serviceInstance);
         register(serviceInstance);
     }
 
     @Override
-    public void doUnregister(ServiceInstance serviceInstance) throws RuntimeException {
+    public void unregister(ServiceInstance serviceInstance) throws RuntimeException {
         String serviceName = serviceInstance.getServiceName();
         List<ServiceInstance> serviceInstances = repository.computeIfAbsent(serviceName, s -> new LinkedList<>());
         serviceInstances.remove(serviceInstance);
     }
 
     @Override
-    public void doInitialize(URL registryURL) throws Exception {
+    public void initialize(URL registryURL) throws Exception {
         this.registryURL = registryURL;
     }
 
     @Override
-    public void doDestroy() {
+    public void destroy() {
     }
 }

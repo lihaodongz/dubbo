@@ -14,9 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.dubbo.registry.client;
+package org.apache.dubbo.registry.xds;
 
 import org.apache.dubbo.common.URL;
+<<<<<<< HEAD:dubbo-registry/dubbo-registry-xds/src/main/java/org/apache/dubbo/registry/xds/XdsRegistry.java
+import org.apache.dubbo.registry.NotifyListener;
+import org.apache.dubbo.registry.support.FailbackRegistry;
+
+/**
+ * Empty implements for xDS <br/>
+ * xDS only support `Service Discovery` mode register <br/>
+ * Used to compat past version like 2.6.x, 2.7.x with interface level register <br/>
+ * {@link XdsServiceDiscovery} is the real implementation of xDS
+ */
+public class XdsRegistry extends FailbackRegistry {
+    public XdsRegistry(URL url) {
+        super(url);
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return true;
+    }
+
+    @Override
+    public void doRegister(URL url) {
+
+    }
+
+    @Override
+    public void doUnregister(URL url) {
+
+    }
+
+    @Override
+    public void doSubscribe(URL url, NotifyListener listener) {
+
+    }
+
+    @Override
+    public void doUnsubscribe(URL url, NotifyListener listener) {
+
+    }
+=======
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.extension.SPI;
 
@@ -33,4 +73,5 @@ public interface RegistryClusterIdentifier {
                 = ExtensionLoader.getExtensionLoader(RegistryClusterIdentifier.class);
         return loader.getExtension(url.getParameter(REGISTRY_CLUSTER_TYPE_KEY, "default"));
     }
+>>>>>>> dubbo-2.7.10:dubbo-registry/dubbo-registry-api/src/main/java/org/apache/dubbo/registry/client/RegistryClusterIdentifier.java
 }

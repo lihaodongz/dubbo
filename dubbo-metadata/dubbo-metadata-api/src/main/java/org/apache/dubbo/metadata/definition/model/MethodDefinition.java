@@ -19,7 +19,6 @@ package org.apache.dubbo.metadata.definition.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,15 +33,7 @@ public class MethodDefinition implements Serializable {
     private String name;
     private String[] parameterTypes;
     private String returnType;
-
-    /**
-     * @deprecated please use parameterTypes,
-     * and find TypeDefinition in org.apache.dubbo.metadata.definition.model.ServiceDefinition#types
-     */
-    @Deprecated
     private List<TypeDefinition> parameters;
-
-    private List<String> annotations;
 
     public String getName() {
         return name;
@@ -79,17 +70,6 @@ public class MethodDefinition implements Serializable {
         this.returnType = formatType(returnType);
     }
 
-    public List<String> getAnnotations() {
-        if (annotations == null) {
-            annotations = Collections.emptyList();
-        }
-        return annotations;
-    }
-
-    public void setAnnotations(List<String> annotations) {
-        this.annotations = annotations;
-    }
-
     @Override
     public String toString() {
         return "MethodDefinition [name=" + name + ", parameterTypes=" + Arrays.toString(parameterTypes)
@@ -107,11 +87,14 @@ public class MethodDefinition implements Serializable {
         MethodDefinition that = (MethodDefinition) o;
         return Objects.equals(getName(), that.getName()) &&
                 Arrays.equals(getParameterTypes(), that.getParameterTypes()) &&
-                Objects.equals(getReturnType(), that.getReturnType());
+                Objects.equals(getReturnType(), that.getReturnType()) &&
+                Objects.equals(getParameters(), that.getParameters());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName(), getReturnType(), Arrays.toString(getParameterTypes()));
+        int result = Objects.hash(getName(), getReturnType(), getParameters());
+        result = 31 * result + Arrays.hashCode(getParameterTypes());
+        return result;
     }
 }

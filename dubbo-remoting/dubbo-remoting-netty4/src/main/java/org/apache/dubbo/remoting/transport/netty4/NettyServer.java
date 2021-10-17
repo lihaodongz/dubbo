@@ -68,7 +68,7 @@ public class NettyServer extends AbstractServer implements RemotingServer {
     /**
      * the boss channel that receive connections and dispatch these to worker channel.
      */
-    private io.netty.channel.Channel channel;
+	private io.netty.channel.Channel channel;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -172,8 +172,15 @@ public class NettyServer extends AbstractServer implements RemotingServer {
     @Override
     public Collection<Channel> getChannels() {
         Collection<Channel> chs = new ArrayList<>(this.channels.size());
-        // pick channels from NettyServerHandler ( needless to check connectivity )
         chs.addAll(this.channels.values());
+        // check of connection status is unnecessary since we are using channels in NettyServerHandler
+//        for (Channel channel : this.channels.values()) {
+//            if (channel.isConnected()) {
+//                chs.add(channel);
+//            } else {
+//                channels.remove(NetUtils.toAddressString(channel.getRemoteAddress()));
+//            }
+//        }
         return chs;
     }
 

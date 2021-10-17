@@ -17,8 +17,8 @@
 package org.apache.dubbo.spring.boot.context.event;
 
 import org.apache.dubbo.config.ApplicationConfig;
-import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubboConfig;
+import org.apache.dubbo.rpc.model.ApplicationModel;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -38,54 +38,57 @@ import java.util.Map;
  */
 public class DubboConfigBeanDefinitionConflictApplicationListenerTest {
 
+    private AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+
     @Before
     public void init() {
-        DubboBootstrap.reset();
-        //context.addApplicationListener(new DubboConfigBeanDefinitionConflictApplicationListener());
+        ApplicationModel.reset();
+        context.addApplicationListener(new DubboConfigBeanDefinitionConflictApplicationListener());
     }
 
     @After
     public void destroy() {
-        DubboBootstrap.reset();
+        context.close();
+        ApplicationModel.reset();
 
     }
 
-    //@Test
+    @Test
     public void testNormalCase() {
 
         System.setProperty("dubbo.application.name", "test-dubbo-application");
 
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DubboConfig.class);
-        try {
-            context.start();
+        context.register(DubboConfig.class);
 
-            ApplicationConfig applicationConfig = context.getBean(ApplicationConfig.class);
+        context.refresh();
 
-            Assert.assertEquals("test-dubbo-application", applicationConfig.getName());
-        } finally {
-            System.clearProperty("dubbo.application.name");
-            context.close();
-        }
+        ApplicationConfig applicationConfig = context.getBean(ApplicationConfig.class);
+
+        Assert.assertEquals("test-dubbo-application", applicationConfig.getName());
     }
 
     @Test
     public void testDuplicatedConfigsCase() {
 
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(PropertySourceConfig.class, DubboConfig.class, XmlConfig.class);
+        context.register(PropertySourceConfig.class, DubboConfig.class);
 
-        try {
-            context.start();
+        context.register(XmlConfig.class);
 
-            Map<String, ApplicationConfig> beansMap = context.getBeansOfType(ApplicationConfig.class);
+        context.refresh();
 
-            ApplicationConfig applicationConfig = beansMap.get("dubbo-consumer-2.7.x");
+        Map<String, ApplicationConfig> beansMap = context.getBeansOfType(ApplicationConfig.class);
 
-            Assert.assertEquals(1, beansMap.size());
+        ApplicationConfig applicationConfig = beansMap.get("dubbo-consumer-2.7.x");
 
-            Assert.assertEquals("dubbo-consumer-2.7.x", applicationConfig.getName());
-        } finally {
-            context.close();
-        }
+        Assert.assertEquals(1, beansMap.size());
+
+        Assert.assertEquals("dubbo-consumer-2.7.x", applicationConfig.getName());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testFailedCase() {
+        context.register(ApplicationConfig.class);
+        testDuplicatedConfigsCase();
     }
 
     @EnableDubboConfig

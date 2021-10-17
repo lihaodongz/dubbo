@@ -25,11 +25,9 @@ import java.util.Map;
 
 import static org.apache.dubbo.common.constants.CommonConstants.EXTRA_KEYS_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.SHUTDOWN_WAIT_KEY;
-import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_CLUSTER_KEY;
-import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_PUBLISH_INSTANCE_KEY;
-import static org.apache.dubbo.common.constants.RegistryConstants.REGISTRY_PUBLISH_INTERFACE_KEY;
 import static org.apache.dubbo.common.constants.RemotingConstants.BACKUP_KEY;
 import static org.apache.dubbo.common.utils.PojoUtils.updatePropertyIfAbsent;
+import static org.apache.dubbo.config.Constants.REGISTRIES_SUFFIX;
 
 /**
  * RegistryConfig
@@ -139,6 +137,11 @@ public class RegistryConfig extends AbstractConfig {
     private Map<String, String> parameters;
 
     /**
+     * Whether it's default
+     */
+    private Boolean isDefault;
+
+    /**
      * Simple the registry. both useful for provider and consumer
      *
      * @since 2.7.0
@@ -179,10 +182,6 @@ public class RegistryConfig extends AbstractConfig {
      */
     private Integer weight;
 
-    private Boolean publishInterface;
-
-    private Boolean publishInstance;
-
     public RegistryConfig() {
     }
 
@@ -196,7 +195,6 @@ public class RegistryConfig extends AbstractConfig {
     }
 
     @Override
-    @Parameter(key = REGISTRY_CLUSTER_KEY)
     public String getId() {
         return super.getId();
     }
@@ -207,7 +205,6 @@ public class RegistryConfig extends AbstractConfig {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-        // protocol as id is inappropriate, registries's protocol may be duplicated
 //        this.updateIdIfAbsent(protocol);
     }
 
@@ -228,6 +225,11 @@ public class RegistryConfig extends AbstractConfig {
                 updatePropertyIfAbsent(this::getProtocol, this::setProtocol, url.getProtocol());
                 updatePropertyIfAbsent(this::getPort, this::setPort, url.getPort());
 
+//                setUsername(url.getUsername());
+//                setPassword(url.getPassword());
+//                updateIdIfAbsent(url.getProtocol());
+//                updateProtocolIfAbsent(url.getProtocol());
+//                updatePortIfAbsent(url.getPort());
                 Map<String, String> params = url.getParameters();
                 if (CollectionUtils.isNotEmptyMap(params)) {
                     params.remove(BACKUP_KEY);
@@ -307,7 +309,7 @@ public class RegistryConfig extends AbstractConfig {
      * @deprecated
      */
     @Deprecated
-    @Parameter(excluded = true, attribute = false)
+    @Parameter(excluded = true)
     public String getTransport() {
         return getTransporter();
     }
@@ -446,6 +448,14 @@ public class RegistryConfig extends AbstractConfig {
         }
     }
 
+    public Boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+
     public Boolean getSimplified() {
         return simplified;
     }
@@ -505,26 +515,17 @@ public class RegistryConfig extends AbstractConfig {
         this.weight = weight;
     }
 
-    @Parameter(key = REGISTRY_PUBLISH_INTERFACE_KEY)
-    public Boolean getPublishInterface() {
-        return publishInterface;
-    }
-
-    public void setPublishInterface(Boolean publishInterface) {
-        this.publishInterface = publishInterface;
-    }
-
-    @Parameter(key = REGISTRY_PUBLISH_INSTANCE_KEY)
-    public Boolean getPublishInstance() {
-        return publishInstance;
-    }
-
-    public void setPublishInstance(Boolean publishInstance) {
-        this.publishInstance = publishInstance;
+    @Override
+    public void refresh() {
+        super.refresh();
+        if (StringUtils.isNotEmpty(this.getId())) {
+            this.setPrefix(REGISTRIES_SUFFIX);
+            super.refresh();
+        }
     }
 
     @Override
-    @Parameter(excluded = true, attribute = false)
+    @Parameter(excluded = true)
     public boolean isValid() {
         // empty protocol will default to 'dubbo'
         return !StringUtils.isEmpty(address);

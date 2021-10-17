@@ -93,7 +93,7 @@ public /**final**/ class RpcException extends RuntimeException {
         return code == BIZ_EXCEPTION;
     }
 
-    public boolean isForbidded() {
+    public boolean isForbidden() {
         return code == FORBIDDEN_EXCEPTION;
     }
 

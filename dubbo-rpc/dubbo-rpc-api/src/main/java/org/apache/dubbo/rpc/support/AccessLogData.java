@@ -23,6 +23,9 @@ import org.apache.dubbo.rpc.RpcContext;
 
 import com.alibaba.fastjson.JSON;
 
+import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.VERSION_KEY;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;

@@ -18,7 +18,6 @@ package org.apache.dubbo.config;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.utils.ClassUtils;
-import org.apache.dubbo.common.utils.RegexProperties;
 import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.config.annotation.Reference;
 import org.apache.dubbo.config.support.Parameter;
@@ -30,10 +29,6 @@ import org.apache.dubbo.rpc.support.ProtocolUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import static org.apache.dubbo.common.constants.CommonConstants.DUBBO;
@@ -86,7 +81,6 @@ public abstract class ReferenceConfigBase<T> extends AbstractReferenceConfig {
     }
 
     public boolean shouldCheck() {
-        checkDefault();
         Boolean shouldCheck = isCheck();
         if (shouldCheck == null && getConsumer() != null) {
             shouldCheck = getConsumer().isCheck();
@@ -99,119 +93,72 @@ public abstract class ReferenceConfigBase<T> extends AbstractReferenceConfig {
     }
 
     public boolean shouldInit() {
-        checkDefault();
         Boolean shouldInit = isInit();
         if (shouldInit == null && getConsumer() != null) {
             shouldInit = getConsumer().isInit();
         }
         if (shouldInit == null) {
-            // default is true
+            // default is true, spring will still init lazily by setting init's default value to false,
+            // the def default setting happens in {@link ReferenceBean#afterPropertiesSet}.
             return true;
         }
         return shouldInit;
     }
 
-    @Override
-    protected void preProcessRefresh() {
-        super.preProcessRefresh();
+    public void checkDefault() throws IllegalStateException {
         if (consumer == null) {
             consumer = ApplicationModel.getConfigManager()
                     .getDefaultConsumer()
-                    .orElseThrow(() -> new IllegalArgumentException("Default consumer is not initialized"));
+                    .orElse(new ConsumerConfig());
         }
     }
 
-    @Override
-    @Parameter(excluded = true, attribute = false)
-    public List<String> getPrefixes() {
-        List<String> prefixes = new ArrayList<>();
-        // dubbo.reference.{interface-name}
-        prefixes.add(DUBBO + ".reference." + interfaceName);
-        return prefixes;
-    }
-
-    @Override
-    public Map<String, String> getMetaData() {
-        Map<String, String> metaData = new HashMap<>();
-        ConsumerConfig consumer = this.getConsumer();
-        // consumer should be inited at preProcessRefresh()
-        if (isRefreshed() && consumer == null) {
-            throw new IllegalStateException("Consumer is not initialized");
-        }
-        // use consumer attributes as default value
-        appendAttributes(metaData, consumer);
-        appendAttributes(metaData, this);
-        return metaData;
-    }
-
-    /**
-     * Get service interface class of this reference.
-     * The actual service type of remote provider.
-     * @return
-     */
-    public Class<?> getServiceInterfaceClass() {
+    public Class<?> getActualInterface() {
         Class actualInterface = interfaceClass;
         if (interfaceClass == GenericService.class) {
             try {
                 actualInterface = Class.forName(interfaceName);
             } catch (ClassNotFoundException e) {
-                return null;
+                // ignore
             }
         }
         return actualInterface;
     }
 
-    /**
-     * Get proxy interface class of this reference.
-     * The proxy interface class is used to create proxy instance.
-     * @return
-     */
     public Class<?> getInterfaceClass() {
         if (interfaceClass != null) {
             return interfaceClass;
         }
-
-        String generic = getGeneric();
-        if (StringUtils.isBlank(generic) && getConsumer() != null) {
-            generic = getConsumer().getGeneric();
+        if (ProtocolUtils.isGeneric(getGeneric())
+                || (getConsumer() != null && ProtocolUtils.isGeneric(getConsumer().getGeneric()))) {
+            return GenericService.class;
         }
-        interfaceClass = determineInterfaceClass(generic, interfaceName);
+        try {
+            if (interfaceName != null && interfaceName.length() > 0) {
+                interfaceClass = Class.forName(interfaceName, true, ClassUtils.getClassLoader());
+            }
+        } catch (ClassNotFoundException t) {
+            throw new IllegalStateException(t.getMessage(), t);
+        }
 
         return interfaceClass;
     }
 
     /**
-     * Determine the interface of the proxy class
-     * @param generic
-     * @param interfaceName
-     * @return
+     * @param interfaceClass
+     * @see #setInterface(Class)
+     * @deprecated
      */
-    public static Class<?> determineInterfaceClass(String generic, String interfaceName) {
-        if (ProtocolUtils.isGeneric(generic)) {
-            return GenericService.class;
-        }
-        try {
-            if (interfaceName != null && interfaceName.length() > 0) {
-                return Class.forName(interfaceName, true, ClassUtils.getClassLoader());
-            }
-        } catch (ClassNotFoundException t) {
-            throw new IllegalStateException(t.getMessage(), t);
-        }
-        return null;
-    }
-
-    public String getInterface() {
-        return interfaceName;
-    }
-
-    public void setInterface(String interfaceName) {
-        this.interfaceName = interfaceName;
+    @Deprecated
+    public void setInterfaceClass(Class<?> interfaceClass) {
+        setInterface(interfaceClass);
     }
 
     public void setInterface(Class<?> interfaceClass) {
         if (interfaceClass != null && !interfaceClass.isInterface()) {
             throw new IllegalStateException("The interface class " + interfaceClass + " is not a interface!");
         }
+        this.interfaceClass = interfaceClass;
         setInterface(interfaceClass == null ? null : interfaceClass.getName());
     }
 
@@ -252,7 +199,13 @@ public abstract class ReferenceConfigBase<T> extends AbstractReferenceConfig {
         return serviceMetadata;
     }
 
-    protected void resolveFile() {
+    @Override
+    @Parameter(excluded = true)
+    public String getPrefix() {
+        return DUBBO + ".reference." + interfaceName;
+    }
+
+    public void resolveFile() {
         String resolve = System.getProperty(interfaceName);
         String resolveFile = null;
         if (StringUtils.isEmpty(resolve)) {
@@ -264,7 +217,7 @@ public abstract class ReferenceConfigBase<T> extends AbstractReferenceConfig {
                 }
             }
             if (resolveFile != null && resolveFile.length() > 0) {
-                Properties properties = new RegexProperties();
+                Properties properties = new Properties();
                 try (FileInputStream fis = new FileInputStream(new File(resolveFile))) {
                     properties.load(fis);
                 } catch (IOException e) {
@@ -294,31 +247,13 @@ public abstract class ReferenceConfigBase<T> extends AbstractReferenceConfig {
                 setRegistryIds(consumer.getRegistryIds());
             }
         }
+
         super.computeValidRegistryIds();
     }
 
-    @Parameter(excluded = true, attribute = false)
+    @Parameter(excluded = true)
     public String getUniqueServiceName() {
-        return interfaceName != null ? URL.buildKey(interfaceName, getGroup(), getVersion()) : null;
-    }
-
-    @Override
-    public String getVersion() {
-        return StringUtils.isEmpty(this.version) ? (consumer != null ? consumer.getVersion() : this.version) : this.version;
-    }
-
-    @Override
-    public String getGroup() {
-        return StringUtils.isEmpty(this.group) ? (consumer != null ? consumer.getGroup() : this.group) : this.group;
-    }
-
-    public Boolean shouldReferAsync() {
-        Boolean shouldReferAsync = getReferAsync();
-        if (shouldReferAsync == null) {
-            shouldReferAsync = consumer != null && consumer.getReferAsync() != null && consumer.getReferAsync();
-        }
-
-        return shouldReferAsync;
+        return URL.buildKey(interfaceName, getGroup(), getVersion());
     }
 
     public abstract T get();

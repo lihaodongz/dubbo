@@ -14,6 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+<<<<<<< HEAD:dubbo-rpc/dubbo-rpc-triple/src/main/java/org/apache/dubbo/rpc/protocol/tri/ClassLoadUtil.java
+package org.apache.dubbo.rpc.protocol.tri;
+
+public class ClassLoadUtil {
+    public static void switchContextLoader(ClassLoader loader) {
+        try {
+            if (loader != null && loader != Thread.currentThread().getContextClassLoader()) {
+                Thread.currentThread().setContextClassLoader(loader);
+            }
+        } catch (SecurityException e) {
+            // ignore , ForkJoinPool & jdk8 & securityManager will cause this
+        }
+    }
+=======
 package org.apache.dubbo.common.extension.wrapper.impl;
 
 import org.apache.dubbo.common.extension.Wrapper;
@@ -30,4 +44,5 @@ public class DemoWrapper implements Demo {
     public String echo(String msg) {
         return demo.echo(msg);
     }
+>>>>>>> dubbo-2.7.10:dubbo-common/src/test/java/org/apache/dubbo/common/extension/wrapper/impl/DemoWrapper.java
 }

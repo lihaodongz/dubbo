@@ -42,11 +42,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
+import static org.apache.dubbo.common.constants.CommonConstants.CONFIG_NAMESPACE_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.ANYHOST_VALUE;
+import static org.apache.dubbo.common.constants.CommonConstants.APPLICATION_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.CHECK_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.CLUSTER_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SPLIT_PATTERN;
-import static org.apache.dubbo.common.constants.CommonConstants.CONFIG_NAMESPACE_KEY;
+import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
 
 /**
  * Apollo implementation, https://github.com/ctripcorp/apollo
@@ -95,7 +97,7 @@ public class ApolloDynamicConfiguration implements DynamicConfiguration {
         }
 
         String namespace = url.getParameter(CONFIG_NAMESPACE_KEY, DEFAULT_GROUP);
-        String apolloNamespace = StringUtils.isEmpty(namespace) ? url.getGroup(DEFAULT_GROUP) : namespace;
+        String apolloNamespace = StringUtils.isEmpty(namespace) ? url.getParameter(GROUP_KEY, DEFAULT_GROUP) : namespace;
         dubboConfig = ConfigService.getConfig(apolloNamespace);
         dubboConfigFile = ConfigService.getConfigFile(apolloNamespace, ConfigFileFormat.Properties);
 
@@ -153,7 +155,7 @@ public class ApolloDynamicConfiguration implements DynamicConfiguration {
     @Override
     public String getConfig(String key, String group, long timeout) throws IllegalStateException {
         if (StringUtils.isNotEmpty(group)) {
-            if (group.equals(url.getApplication())) {
+            if (group.equals(url.getParameter(APPLICATION_KEY))) {
                 return ConfigService.getAppConfig().getProperty(key, null);
             } else {
                 return ConfigService.getConfig(group).getProperty(key, null);
@@ -179,7 +181,7 @@ public class ApolloDynamicConfiguration implements DynamicConfiguration {
         if (StringUtils.isEmpty(group)) {
             return dubboConfigFile.getContent();
         }
-        if (group.equals(url.getApplication())) {
+        if (group.equals(url.getParameter(APPLICATION_KEY))) {
             return ConfigService.getConfigFile(APOLLO_APPLICATION_KEY, ConfigFileFormat.Properties).getContent();
         }
 

@@ -20,7 +20,6 @@ import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.spring.ServiceBean;
 import org.apache.dubbo.config.spring.beans.factory.annotation.ReferenceAnnotationBeanPostProcessor;
 
-import org.apache.dubbo.config.spring.util.DubboBeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -39,11 +38,12 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static org.apache.dubbo.config.spring.beans.factory.annotation.ReferenceAnnotationBeanPostProcessor.BEAN_NAME;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 import static org.springframework.util.ClassUtils.isPrimitiveOrWrapper;
 
 /**
- * Abstract Dubbo Meatadata
+ * Abstract Dubbo Metadata
  *
  * @since 2.7.0
  */
@@ -93,9 +93,8 @@ public abstract class AbstractDubboMetadata implements ApplicationContextAware, 
 
                     String name = Introspector.decapitalize(propertyDescriptor.getName());
                     Object value = readMethod.invoke(bean);
-                    if (value != null) {
-                        beanMetadata.put(name, value);
-                    }
+
+                    beanMetadata.put(name, value);
                 }
 
             }
@@ -113,7 +112,7 @@ public abstract class AbstractDubboMetadata implements ApplicationContextAware, 
     }
 
     protected ReferenceAnnotationBeanPostProcessor getReferenceAnnotationBeanPostProcessor() {
-        return DubboBeanUtils.getReferenceAnnotationBeanPostProcessor(applicationContext);
+        return applicationContext.getBean(BEAN_NAME, ReferenceAnnotationBeanPostProcessor.class);
     }
 
     protected Map<String, ProtocolConfig> getProtocolConfigsBeanMap() {

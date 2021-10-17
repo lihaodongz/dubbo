@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -122,7 +121,7 @@ public class CompatibleTypeUtils {
                 if (StringUtils.isEmpty(string)) {
                     return null;
                 }
-                return LocalDate.parse(string);
+                return java.time.LocalDate.parse(string);
             }
             if (type == java.time.LocalTime.class) {
                 if (StringUtils.isEmpty(string)) {
@@ -207,19 +206,19 @@ public class CompatibleTypeUtils {
             }
         }
         if (value.getClass().isArray() && Collection.class.isAssignableFrom(type)) {
-            int length = Array.getLength(value);
             Collection collection;
             if (!type.isInterface()) {
                 try {
                     collection = (Collection) type.newInstance();
                 } catch (Throwable e) {
-                    collection = new ArrayList<Object>(length);
+                    collection = new ArrayList<Object>();
                 }
             } else if (type == Set.class) {
-                collection = new HashSet<Object>(Math.max((int) (length/.75f) + 1, 16));
+                collection = new HashSet<Object>();
             } else {
-                collection = new ArrayList<Object>(length);
+                collection = new ArrayList<Object>();
             }
+            int length = Array.getLength(value);
             for (int i = 0; i < length; i++) {
                 collection.add(Array.get(value, i));
             }

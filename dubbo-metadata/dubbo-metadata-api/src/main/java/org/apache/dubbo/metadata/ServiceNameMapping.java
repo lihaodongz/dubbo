@@ -18,26 +18,21 @@ package org.apache.dubbo.metadata;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.SPI;
-import org.apache.dubbo.common.utils.StringUtils;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
-import static java.util.Collections.emptySet;
-import static org.apache.dubbo.common.constants.CommonConstants.COMMA_SEPARATOR;
+import static org.apache.dubbo.common.constants.CommonConstants.CONFIG_MAPPING_TYPE;
 import static org.apache.dubbo.common.extension.ExtensionLoader.getExtensionLoader;
 import static org.apache.dubbo.common.utils.StringUtils.SLASH;
+import static org.apache.dubbo.metadata.DynamicConfigurationServiceNameMapping.DEFAULT_MAPPING_GROUP;
 
 /**
  * The interface for Dubbo service name Mapping
  *
  * @since 2.7.5
  */
-@SPI("metadata")
+@SPI("config")
 public interface ServiceNameMapping {
-
-    String DEFAULT_MAPPING_GROUP = "mapping";
 
     /**
      * Map the specified Dubbo service interface, group, version and protocol to current Dubbo service name
@@ -45,44 +40,33 @@ public interface ServiceNameMapping {
     void map(URL url);
 
     /**
+     * Get the service names from the specified Dubbo service interface, group, version and protocol
+     *
+     * @return
+     */
+    Set<String> getAndListen(URL url, MappingListener mappingListener);
+
+    /**
      * Get the default extension of {@link ServiceNameMapping}
      *
      * @return non-null {@link ServiceNameMapping}
+     * @see DynamicConfigurationServiceNameMapping
      */
     static ServiceNameMapping getDefaultExtension() {
         return getExtensionLoader(ServiceNameMapping.class).getDefaultExtension();
     }
 
-    static String buildMappingKey(URL url) {
-        return buildGroup(url.getServiceInterface());
+    static ServiceNameMapping getExtension(String name) {
+        return getExtensionLoader(ServiceNameMapping.class).getExtension(name == null ? CONFIG_MAPPING_TYPE : name);
     }
 
-    static String buildGroup(String serviceInterface) {
-        //the issue : https://github.com/apache/dubbo/issues/4671
+    static String buildGroup(String serviceInterface, String group, String version, String protocol) {
+        //        the issue : https://github.com/apache/dubbo/issues/4671
+        //        StringBuilder groupBuilder = new StringBuilder(serviceInterface)
+        //                .append(KEY_SEPARATOR).append(defaultString(group))
+        //                .append(KEY_SEPARATOR).append(defaultString(version))
+        //                .append(KEY_SEPARATOR).append(defaultString(protocol));
+        //        return groupBuilder.toString();
         return DEFAULT_MAPPING_GROUP + SLASH + serviceInterface;
     }
-
-    static String toStringKeys(Set<String> serviceNames) {
-        return serviceNames.toString();
-    }
-
-    static Set<String> getAppNames(String content) {
-        if (StringUtils.isBlank(content)) {
-            return emptySet();
-        }
-        return new HashSet<>(Arrays.asList(content.split(COMMA_SEPARATOR)));
-    }
-
-    /**
-     * 1.developer explicitly specifies the application name this interface belongs to
-     * 2.check Interface-App mapping
-     */
-    Set<String> getServices(URL subscribedURL);
-
-    /**
-     * 1.developer explicitly specifies the application name this interface belongs to
-     * 2.check Interface-App mapping
-     * 3.use the services specified in registry url.
-     */
-    Set<String> getAndListenServices(URL registryURL, URL subscribedURL, MappingListener listener);
 }

@@ -17,6 +17,7 @@
 package org.apache.dubbo.rpc.filter;
 
 import org.apache.dubbo.common.URL;
+import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.rpc.AppResponse;
 import org.apache.dubbo.rpc.AsyncRpcResult;
 import org.apache.dubbo.rpc.Invocation;
@@ -37,7 +38,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.dubbo.common.constants.CommonConstants.$INVOKE;
-import static org.apache.dubbo.common.constants.CommonConstants.ENABLE_NATIVE_JAVA_GENERIC_SERIALIZE;
 import static org.apache.dubbo.common.constants.CommonConstants.GENERIC_SERIALIZATION_NATIVE_JAVA;
 import static org.apache.dubbo.rpc.Constants.GENERIC_KEY;
 import static org.mockito.ArgumentMatchers.any;
@@ -77,7 +77,7 @@ public class GenericFilterTest {
     @Test
     public void testInvokeWithJavaException() throws Exception {
         // temporary enable native java generic serialize
-        System.setProperty(ENABLE_NATIVE_JAVA_GENERIC_SERIALIZE, "true");
+        System.setProperty(CommonConstants.ENABLE_NATIVE_JAVA_GENERIC_SERIALIZE, "true");
         Assertions.assertThrows(RpcException.class, () -> {
             Method genericInvoke = GenericService.class.getMethods()[0];
 
@@ -98,7 +98,7 @@ public class GenericFilterTest {
 
             genericFilter.invoke(invoker, invocation);
         });
-        System.clearProperty(ENABLE_NATIVE_JAVA_GENERIC_SERIALIZE);
+        System.clearProperty(CommonConstants.ENABLE_NATIVE_JAVA_GENERIC_SERIALIZE);
     }
 
     @Test
