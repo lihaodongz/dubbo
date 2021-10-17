@@ -21,6 +21,7 @@ import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.apache.dubbo.remoting.Constants;
+import org.apache.dubbo.rpc.Invoker;
 import org.apache.dubbo.rpc.Protocol;
 import org.apache.dubbo.rpc.ProxyFactory;
 import org.apache.dubbo.rpc.RpcException;
@@ -261,6 +262,9 @@ public class DubboProtocolTest {
 
     @Test
     public void testExport(){
-
+        URL url = URL.valueOf("dubbo://127.0.0.1");
+        DemoService demoService = new DemoServiceImpl();
+        Invoker<DemoService> invoker = proxy.getInvoker(demoService, DemoService.class, url);
+        protocol.export(invoker);
     }
 }

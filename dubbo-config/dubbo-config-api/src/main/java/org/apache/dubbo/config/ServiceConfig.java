@@ -360,6 +360,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 serviceMetadata
         );
 
+        // registry://127.0.0.1:9090/org.apache.dubbo.registry.RegistryService?application=app&dubbo=2.0.2&pid=3648&registry=mockprotocol2&timestamp=1634462247912
         List<URL> registryURLs = ConfigValidationUtils.loadRegistries(this, true);
 
         // 协议的数量,接口的暴露是协议的次数来的.假设设置了两个协议,一次接口的将在不同的协议场景下被暴露

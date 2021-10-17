@@ -249,6 +249,12 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
         return null;
     }
 
+    /**
+     * 代理对象调用自己的方法 invokcationHandler-->this
+     * @param invocation
+     * @return
+     * @throws RpcException
+     */
     @Override
     public Result invoke(final Invocation invocation) throws RpcException {
         checkWhetherDestroyed();

@@ -415,6 +415,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                     // for multi-subscription scenario, use 'zone-aware' policy by default
                     String cluster = registryURL.getParameter(CLUSTER_KEY, ZoneAwareCluster.NAME);
                     // The invoker wrap sequence would be: ZoneAwareClusterInvoker(StaticDirectory) -> FailoverClusterInvoker(RegistryDirectory, routing happens here) -> Invoker
+                    // 次数返回的reference是被cluster集群包裹的对象,所以在调用的时候也是分开调用的
                     invoker = Cluster.getCluster(cluster, false).join(new StaticDirectory(registryURL, invokers));
                 } else { // not a registry url, must be direct invoke.
                     String cluster = CollectionUtils.isNotEmpty(invokers)

@@ -70,12 +70,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.withSettings;
 
 public class ServiceConfigTest {
+
     private Protocol protocolDelegate = Mockito.mock(Protocol.class);
     private Registry registryDelegate = Mockito.mock(Registry.class);
     private Exporter exporter = Mockito.mock(Exporter.class);
     private ServiceConfig<DemoServiceImpl> service = new ServiceConfig<DemoServiceImpl>();
     private ServiceConfig<DemoServiceImpl> service2 = new ServiceConfig<DemoServiceImpl>();
     private ServiceConfig<DemoServiceImpl> delayService = new ServiceConfig<DemoServiceImpl>();
+    private ServiceConfig<DemoServiceImpl> service4 = new ServiceConfig<>();
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -94,7 +96,7 @@ public class ServiceConfigTest {
 
         RegistryConfig registry = new RegistryConfig();
         registry.setProtocol("mockprotocol2");
-        registry.setAddress("N/A");
+        registry.setAddress("127.0.0.1");
 
         ArgumentConfig argument = new ArgumentConfig();
         argument.setIndex(0);
@@ -298,6 +300,7 @@ public class ServiceConfigTest {
         }
     }
 
+    // 测试服务暴露
     @Test
     public void testServiceConfig(){
         try {

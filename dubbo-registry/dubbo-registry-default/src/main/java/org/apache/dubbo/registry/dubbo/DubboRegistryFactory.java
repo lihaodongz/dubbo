@@ -104,6 +104,7 @@ public class DubboRegistryFactory extends AbstractRegistryFactory {
                 urls.add(url.setAddress(address));
             }
         }
+        // 先列出所有的invokers
         RegistryDirectory<RegistryService> directory = new RegistryDirectory<>(RegistryService.class, url.addParameter(INTERFACE_KEY, RegistryService.class.getName()).addParameterAndEncoded(REFER_KEY, url.toParameterString()));
         Invoker<RegistryService> registryInvoker = cluster.join(directory);
         RegistryService registryService = proxyFactory.getProxy(registryInvoker);
