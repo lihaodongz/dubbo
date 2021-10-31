@@ -38,6 +38,7 @@ public class AvailableClusterInvoker<T> extends AbstractClusterInvoker<T> {
     @Override
     public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         for (Invoker<T> invoker : invokers) {
+            // 循环调用 选取第一个可用对象
             if (invoker.isAvailable()) {
                 return invoker.invoke(invocation);
             }

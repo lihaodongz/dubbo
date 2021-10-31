@@ -35,12 +35,14 @@ import static org.apache.dubbo.common.constants.CommonConstants.REFERENCE_INTERC
 public abstract class AbstractCluster implements Cluster {
 
     private <T> Invoker<T> buildClusterInterceptors(AbstractClusterInvoker<T> clusterInvoker, String key) {
+        //
         AbstractClusterInvoker<T> last = clusterInvoker;
         List<ClusterInterceptor> interceptors = ExtensionLoader.getExtensionLoader(ClusterInterceptor.class).getActivateExtension(clusterInvoker.getUrl(), key);
 
         if (!interceptors.isEmpty()) {
             for (int i = interceptors.size() - 1; i >= 0; i--) {
                 final ClusterInterceptor interceptor = interceptors.get(i);
+                // 将最终的拦截器放到最后的一个节点。
                 final AbstractClusterInvoker<T> next = last;
                 last = new InterceptorInvokerNode<>(clusterInvoker, interceptor, next);
             }
@@ -50,7 +52,9 @@ public abstract class AbstractCluster implements Cluster {
 
     @Override
     public <T> Invoker<T> join(Directory<T> directory) throws RpcException {
-        return buildClusterInterceptors(doJoin(directory), directory.getUrl().getParameter(REFERENCE_INTERCEPTOR_KEY));
+        AbstractClusterInvoker<T> tAbstractClusterInvoker = doJoin(directory);
+        return buildClusterInterceptors(tAbstractClusterInvoker,directory.getUrl().getParameter(REFERENCE_INTERCEPTOR_KEY));
+        // return buildClusterInterceptors(doJoin(directory), directory.getUrl().getParameter(REFERENCE_INTERCEPTOR_KEY));
     }
 
     protected abstract <T> AbstractClusterInvoker<T> doJoin(Directory<T> directory) throws RpcException;

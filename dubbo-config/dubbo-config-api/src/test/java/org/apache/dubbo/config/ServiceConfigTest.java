@@ -96,7 +96,7 @@ public class ServiceConfigTest {
 
         RegistryConfig registry = new RegistryConfig();
         registry.setProtocol("mockprotocol2");
-        registry.setAddress("127.0.0.1");
+        registry.setAddress("127,0.0.1");
 
         ArgumentConfig argument = new ArgumentConfig();
         argument.setIndex(0);

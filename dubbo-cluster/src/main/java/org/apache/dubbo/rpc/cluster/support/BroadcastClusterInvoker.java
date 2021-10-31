@@ -62,6 +62,7 @@ public class BroadcastClusterInvoker<T> extends AbstractClusterInvoker<T> {
             broadcastFailPercent = MAX_BROADCAST_FAIL_PERCENT;
         }
 
+        // 计算允许失败的服务提供者数量
         int failThresholdIndex = invokers.size() * broadcastFailPercent / MAX_BROADCAST_FAIL_PERCENT;
         int failIndex = 0;
         for (Invoker<T> invoker : invokers) {

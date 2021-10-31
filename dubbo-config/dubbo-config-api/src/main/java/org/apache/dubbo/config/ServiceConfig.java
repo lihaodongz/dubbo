@@ -361,6 +361,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         );
 
         // registry://127.0.0.1:9090/org.apache.dubbo.registry.RegistryService?application=app&dubbo=2.0.2&pid=3648&registry=mockprotocol2&timestamp=1634462247912
+        // 若配置地址为N/A的时候则不暴露任何服务
         List<URL> registryURLs = ConfigValidationUtils.loadRegistries(this, true);
 
         // 协议的数量,接口的暴露是协议的次数来的.假设设置了两个协议,一次接口的将在不同的协议场景下被暴露
@@ -397,7 +398,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         if (metadataReportConfig != null && metadataReportConfig.isValid()) {
             map.putIfAbsent(METADATA_KEY, REMOTE_METADATA_STORAGE_TYPE);
         }
-        // 服务暴露是按照方法暴露的
+        // 服务暴露是按照方法暴露的,该方法主要是对暴露的函数进行封装
         if (CollectionUtils.isNotEmpty(getMethods())) {
             for (MethodConfig method : getMethods()) {
                 AbstractConfig.appendParameters(map, method, method.getName());
@@ -547,9 +548,9 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                         if (StringUtils.isNotEmpty(proxy)) {
                             registryURL = registryURL.addParameter(PROXY_KEY, proxy);
                         }
-
-                        Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass,
-                                registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
+                        // registry://127:9090/org.apache.dubbo.registry.RegistryService?application=app&backup=0.0.1&dubbo=2.0.2&export=mockprotocol2%3A%2F%2F172.18.251.124%3A1%2Forg.apache.dubbo.config.api.DemoService%3Fanyhost%3Dtrue%26application%3Dapp%26bind.ip%3D172.18.251.124%26bind.port%3D1%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26echo.0.callback%3Dfalse%26export%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.config.api.DemoService%26methods%3DgetUsers%2CsayName%2Cecho%2CthrowDemoException%2CgetBox%26pid%3D5305%26release%3D%26service.name%3DServiceBean%3A%2Forg.apache.dubbo.config.api.DemoService%26side%3Dprovider%26timestamp%3D1634470696965&pid=5305&registry=mockprotocol2&timestamp=1634470696888
+                        URL url1 = registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString());
+                        Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, url1);
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
                         Exporter<?> exporter = PROTOCOL.export(wrapperInvoker);

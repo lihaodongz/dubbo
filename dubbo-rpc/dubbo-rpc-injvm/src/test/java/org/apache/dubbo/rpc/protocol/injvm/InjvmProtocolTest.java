@@ -147,7 +147,10 @@ public class InjvmProtocolTest {
 
     @Test
     public void testInit() {
-
+        /**
+         * injvm 调用链路分析
+         *
+         */
         DemoService demoService = new DemoServiceImpl();
         URL url = URL.valueOf("injvm://127.0.0.1/TestService").addParameter(INTERFACE_KEY,demoService.getClass().getName());
         System.out.println("url"+url);

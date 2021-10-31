@@ -19,17 +19,7 @@ package org.apache.dubbo.rpc.protocol.injvm;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.threadpool.manager.ExecutorRepository;
-import org.apache.dubbo.rpc.AppResponse;
-import org.apache.dubbo.rpc.AsyncRpcResult;
-import org.apache.dubbo.rpc.Constants;
-import org.apache.dubbo.rpc.Exporter;
-import org.apache.dubbo.rpc.FutureContext;
-import org.apache.dubbo.rpc.Invocation;
-import org.apache.dubbo.rpc.InvokeMode;
-import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.RpcException;
-import org.apache.dubbo.rpc.RpcInvocation;
+import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.protocol.AbstractInvoker;
 
 import java.util.Map;
@@ -98,7 +88,8 @@ class InjvmInvoker<T> extends AbstractInvoker<T> {
             result.setExecutor(executor);
             return result;
         } else {
-            return exporter.getInvoker().invoke(invocation);
+            Invoker<?> invoker = exporter.getInvoker();
+            return  invoker.invoke(invocation);
         }
     }
 
