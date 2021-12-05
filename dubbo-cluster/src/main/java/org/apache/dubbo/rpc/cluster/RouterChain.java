@@ -28,6 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
+ * route的集合
  * Router chain
  */
 public class RouterChain<T> {
@@ -46,6 +47,7 @@ public class RouterChain<T> {
         return new RouterChain<>(url);
     }
 
+    // 生成路由类
     private RouterChain(URL url) {
         List<RouterFactory> extensionFactories = ExtensionLoader.getExtensionLoader(RouterFactory.class)
                 .getActivateExtension(url, (String[]) null);
@@ -88,7 +90,7 @@ public class RouterChain<T> {
     }
 
     /**
-     *
+     * 循环执行route
      * @param url
      * @param invocation
      * @return

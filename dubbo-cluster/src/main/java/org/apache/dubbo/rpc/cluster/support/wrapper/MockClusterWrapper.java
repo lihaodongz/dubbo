@@ -34,6 +34,9 @@ public class MockClusterWrapper implements Cluster {
     }
 
     @Override
+    /**
+     *
+     */
     public <T> Invoker<T> join(Directory<T> directory) throws RpcException {
         return new MockClusterInvoker<T>(directory,
                 this.cluster.join(directory));

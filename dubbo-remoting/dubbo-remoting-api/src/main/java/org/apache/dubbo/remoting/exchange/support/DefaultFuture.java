@@ -84,6 +84,7 @@ public class DefaultFuture implements ResponseFuture {
      */
     private static void timeoutCheck(DefaultFuture future) {
         TimeoutCheckTask task = new TimeoutCheckTask(future);
+        // 新建一个定时任务
         TIME_OUT_TIMER.newTimeout(task, future.getTimeout(), TimeUnit.MILLISECONDS);
     }
 

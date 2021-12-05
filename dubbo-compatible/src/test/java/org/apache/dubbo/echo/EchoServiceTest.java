@@ -34,7 +34,7 @@ import org.junit.Test;
 public class EchoServiceTest {
 
     @Test
-    public void testEcho() {
+    public void testEcho() throws Throwable {
         DemoService server = new DemoServiceImpl();
         ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
         Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();

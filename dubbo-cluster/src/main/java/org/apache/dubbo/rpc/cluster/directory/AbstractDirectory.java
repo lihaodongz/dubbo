@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.dubbo.rpc.cluster.directory;
-
 import org.apache.dubbo.common.Constants;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.logger.Logger;

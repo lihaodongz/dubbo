@@ -87,7 +87,6 @@ public class MockClusterInvoker<T> implements Invoker<T> {
                 if (e.isBiz()) {
                     throw e;
                 }
-                
                 if (logger.isWarnEnabled()) {
                     logger.warn("fail-mock: " + invocation.getMethodName() + " fail-mock enabled , url : " + directory.getUrl(), e);
                 }
@@ -98,6 +97,7 @@ public class MockClusterInvoker<T> implements Invoker<T> {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
+    // 选择一个mockInvoke
     private Result doMockInvoke(Invocation invocation, RpcException e) {
         Result result = null;
         Invoker<T> minvoker;
