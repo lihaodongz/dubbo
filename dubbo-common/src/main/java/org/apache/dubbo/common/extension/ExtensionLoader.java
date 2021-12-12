@@ -525,10 +525,12 @@ public class ExtensionLoader<T> {
     }
 
     @SuppressWarnings("unchecked")
+    // default
     private T createExtension(String name) {
         // 根据名称获取指定的Class
         // Map<String, Class<?>> extensionClasses = getExtensionClasses(); default ==> org.apache.dubbo.common.demo.HelloServiceImpl
         Class<?> clazz = getExtensionClasses().get(name);
+        // helloser.class
         if (clazz == null) {
             throw findException(name);
         }
@@ -538,7 +540,7 @@ public class ExtensionLoader<T> {
                 EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
-            // 此处的话已经加载完想要的类了; 此处进行Ioc
+            // 此处的话已经加载完想要的类了; 此处进行Ioc =
             injectExtension(instance);
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             // 进行Aop的增强
@@ -577,14 +579,16 @@ public class ExtensionLoader<T> {
                         }
                         try {
                             // setName || setAddress || setItemsList
+                               // name
                             /**
                              * method.getName().substring(3, 4).toLowerCase()  将第四位字母变成小写
                              * method.getName().substring(4) 取四位到末尾的字母拼接
                              */
                             String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
-
+                            // B
                             Object object = objectFactory.getExtension(pt, property);
                             if (object != null) {
+                                //set
                                 method.invoke(instance, object);
                             }
                         } catch (Exception e) {
@@ -715,7 +719,10 @@ public class ExtensionLoader<T> {
      * @param extensionClasses
      * @param resourceURL
      * @param clazz
-     * @param name
+     *             jvm map  ==> key value class
+     * @param name key-value
+     *             string:default
+     *             value Class
      * @throws NoSuchMethodException
      */
     private void loadClass(Map<String, Class<?>> extensionClasses, java.net.URL resourceURL, Class<?> clazz, String name) throws NoSuchMethodException {

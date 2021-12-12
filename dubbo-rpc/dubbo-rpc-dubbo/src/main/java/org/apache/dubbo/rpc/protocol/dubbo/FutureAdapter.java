@@ -34,6 +34,7 @@ public class FutureAdapter<V> extends CompletableFuture<V> {
     private final ResponseFuture future;
     private CompletableFuture<Result> resultFuture;
 
+    // 设置返回结果
     public FutureAdapter(ResponseFuture future) {
         this.future = future;
         this.resultFuture = new CompletableFuture<>();

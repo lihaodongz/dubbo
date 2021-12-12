@@ -101,6 +101,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         return request(request, channel.getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT));
     }
 
+    // 在request里面新建一个response
     @Override
     public ResponseFuture request(Object request, int timeout) throws RemotingException {
         if (closed) {

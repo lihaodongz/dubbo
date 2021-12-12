@@ -100,7 +100,7 @@ public class DefaultFuture implements ResponseFuture {
      */
     public static DefaultFuture newFuture(Channel channel, Request request, int timeout) {
         final DefaultFuture future = new DefaultFuture(channel, request, timeout);
-        // timeout check
+        // timeout check timeout 到期之后检查结果
         timeoutCheck(future);
         return future;
     }
@@ -143,6 +143,7 @@ public class DefaultFuture implements ResponseFuture {
         }
     }
 
+    // 处理response的方法
     public static void received(Channel channel, Response response) {
         try {
             DefaultFuture future = FUTURES.remove(response.getId());
@@ -227,6 +228,7 @@ public class DefaultFuture implements ResponseFuture {
         }
     }
 
+    // 处理到期回调
     private static class TimeoutCheckTask implements TimerTask {
 
         private DefaultFuture future;
@@ -332,6 +334,7 @@ public class DefaultFuture implements ResponseFuture {
         try {
             response = res;
             if (done != null) {
+                // 唤起回调
                 done.signal();
             }
         } finally {
