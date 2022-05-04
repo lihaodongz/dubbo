@@ -175,7 +175,7 @@ public class RegistryProtocol implements Protocol {
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(providerUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
-
+        // overwriteurl
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
         //export invoker
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
@@ -216,7 +216,6 @@ public class RegistryProtocol implements Protocol {
             synchronized (bounds) {
                 exporter = (ExporterChangeableWrapper<T>) bounds.get(key);
                 if (exporter == null) {
-
                     final Invoker<?> invokerDelegete = new InvokerDelegate<T>(originInvoker, providerUrl);
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
                     bounds.put(key, exporter);
@@ -309,6 +308,8 @@ public class RegistryProtocol implements Protocol {
     }
 
     private URL getSubscribedOverrideUrl(URL registeredProviderUrl) {
+        // 重写协议
+        URL url = registeredProviderUrl.setProtocol(PROVIDER_PROTOCOL);
         return registeredProviderUrl.setProtocol(PROVIDER_PROTOCOL)
                 .addParameters(CATEGORY_KEY, CONFIGURATORS_CATEGORY, CHECK_KEY, String.valueOf(false));
     }
@@ -342,6 +343,7 @@ public class RegistryProtocol implements Protocol {
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // registry-> dubbo
         url = url.setProtocol(url.getParameter(REGISTRY_KEY, DEFAULT_REGISTRY)).removeParameter(REGISTRY_KEY);
         Registry registry = registryFactory.getRegistry(url);
         if (RegistryService.class.equals(type)) {

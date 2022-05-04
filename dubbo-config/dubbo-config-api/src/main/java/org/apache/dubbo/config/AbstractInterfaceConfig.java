@@ -292,10 +292,12 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 if (StringUtils.isEmpty(address)) {
                     address = Constants.ANYHOST_VALUE;
                 }
+
                 if (!RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
                     appendParameters(map, application);
                     appendParameters(map, config);
+                    // todo Address.!= "n/A" 强制成为RegistryService 细节之处 有重要的关键作用
                     map.put("path", RegistryService.class.getName());
                     appendRuntimeParameters(map);
                     if (!map.containsKey("protocol")) {

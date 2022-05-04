@@ -115,6 +115,7 @@ public abstract class Wrapper {
 
         Wrapper ret = WRAPPER_MAP.get(c);
         if (ret == null) {
+            // 动态构建一个对象
             ret = makeWrapper(c);
             WRAPPER_MAP.put(c, ret);
         }

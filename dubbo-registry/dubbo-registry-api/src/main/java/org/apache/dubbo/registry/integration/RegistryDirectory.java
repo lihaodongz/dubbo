@@ -211,6 +211,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * </ol>
      *
      * @param invokerUrls this parameter can't be null
+     *                    远程注册中心地址发生改变的时候
      */
     // TODO: 2017/8/31 FIXME The thread pool should be used to refresh the address, otherwise the task may be accumulated.
     private void refreshInvoker(List<URL> invokerUrls) {

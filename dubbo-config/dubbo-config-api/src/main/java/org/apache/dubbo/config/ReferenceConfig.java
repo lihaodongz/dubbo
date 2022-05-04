@@ -215,6 +215,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         checkMetadataReport();
     }
 
+    /**
+     * 创建代理对象
+     * @return
+     */
     public synchronized T get() {
         checkAndUpdateSubConfigs();
 
@@ -359,8 +363,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
 
             if (urls.size() == 1) {
+                // 单用户注册中心逻辑.
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             } else {
+                // 多用户注册中心的代码代码逻辑.核心逻辑就是
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 for (URL url : urls) {
@@ -372,6 +378,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 if (registryURL != null) { // registry url is available
                     // use RegistryAwareCluster only when register's cluster is available
                     URL u = registryURL.addParameter(Constants.CLUSTER_KEY, RegistryAwareCluster.NAME);
+                    // 多结果聚合
                     // The invoker wrap relation would be: RegistryAwareClusterInvoker(StaticDirectory) -> FailoverClusterInvoker(RegistryDirectory, will execute route) -> Invoker
                     invoker = cluster.join(new StaticDirectory(u, invokers));
                 } else { // not a registry url, must be direct invoke.
@@ -405,6 +412,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             metadataReportService.publishConsumer(consumerURL);
         }
         // create service proxy
+        // tudo 此处创建一个代理对象
         return (T) proxyFactory.getProxy(invoker);
     }
 

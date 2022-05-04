@@ -18,11 +18,7 @@ package org.apache.dubbo.rpc.protocol.injvm;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.utils.NetUtils;
-import org.apache.dubbo.rpc.Exporter;
-import org.apache.dubbo.rpc.Invocation;
-import org.apache.dubbo.rpc.Result;
-import org.apache.dubbo.rpc.RpcContext;
-import org.apache.dubbo.rpc.RpcException;
+import org.apache.dubbo.rpc.*;
 import org.apache.dubbo.rpc.protocol.AbstractInvoker;
 
 import java.util.Map;
@@ -54,11 +50,18 @@ class InjvmInvoker<T> extends AbstractInvoker<T> {
 
     @Override
     public Result doInvoke(Invocation invocation) throws Throwable {
+        // 拿到暴露的对象
         Exporter<?> exporter = InjvmProtocol.getExporter(exporterMap, getUrl());
         if (exporter == null) {
             throw new RpcException("Service [" + key + "] not found.");
         }
+
         RpcContext.getContext().setRemoteAddress(NetUtils.LOCALHOST, 0);
-        return exporter.getInvoker().invoke(invocation);
+        // InIvmProtocol.getExporter -> Exporter -> inJvmProtocol
+        Invoker<?> invoker = exporter.getInvoker();
+        // 拿到服务暴露的对象了 invoke 就是执行调用了 result 就是拿到结果了 关键问题是这个时候的invoker是一个什么对象 服务暴露的时候暴露的是一个什么对象呢
+
+        return invoker.invoke(invocation);
+        // return exporter.getInvoker().invoke(invocation);
     }
 }

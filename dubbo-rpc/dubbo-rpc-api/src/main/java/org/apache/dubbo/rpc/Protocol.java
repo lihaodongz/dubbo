@@ -28,9 +28,11 @@ public interface Protocol {
 
     int getDefaultPort();
 
+    // 复杂将一个invoker 赋予rpc能力
     @Adaptive
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;
 
+    // 根绝类型查找本地的rpc
     @Adaptive
     <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException;
 

@@ -29,6 +29,12 @@ import org.apache.dubbo.rpc.proxy.InvokerInvocationHandler;
  */
 public class JavassistProxyFactory extends AbstractProxyFactory {
 
+
+    // 屏蔽invoker的细节
+    // 创建一个对象的代理对象
+    // interfaces --> proxy
+    // interfaces --> invoker
+    // stringbuilder  将类编排处理 然后 classloader -->  xxxx.Class
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getProxy(Invoker<T> invoker, Class<?>[] interfaces) {
@@ -36,10 +42,13 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
         return (T) Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
     }
 
+    // 根据具体的proxy和type找到对应的invoker
     @Override
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
+        // 返回一个invoker对象. Invoke的时候自动跳转到proxy的实现
         // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
         final Wrapper wrapper = Wrapper.getWrapper(proxy.getClass().getName().indexOf('$') < 0 ? proxy.getClass() : type);
+        // 返回一个动态构建的类
         return new AbstractProxyInvoker<T>(proxy, type, url) {
             @Override
             protected Object doInvoke(T proxy, String methodName,
