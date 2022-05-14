@@ -56,8 +56,10 @@ public class DubboRegistry extends FailbackRegistry {
     // The lock for client acquisition process, lock the creation process of the client instance to prevent repeated clients
     private final ReentrantLock clientLock = new ReentrantLock();
 
+    //
     private final Invoker<RegistryService> registryInvoker;
 
+    // registryInvoker的代理对象
     private final RegistryService registryService;
 
     /**

@@ -88,6 +88,13 @@ public class DubboRegistryFactory extends AbstractRegistryFactory {
                 urls.add(url.setAddress(address));
             }
         }
+        // 感觉是一次核心逻辑 没看明白 外围也是一直在执行这三步
+        /**
+         * 1.directory = new RegistryDirectory()
+         * 2.registryInvoker = cluster.join(directory)
+         * 3.registryService = proxyFactory.getProxy(registryInvoker)
+         *
+         */
         RegistryDirectory<RegistryService> directory = new RegistryDirectory<RegistryService>(RegistryService.class, url.addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName()).addParameterAndEncoded(Constants.REFER_KEY, url.toParameterString()));
         Invoker<RegistryService> registryInvoker = cluster.join(directory);
         RegistryService registryService = proxyFactory.getProxy(registryInvoker);
